@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- CodeDuel is frontend-only: player stats and match history persist in localStorage via `src/lib/store.ts` (`useUser`), and mock players/problems live in `src/lib/data.ts`. Why: the spec asks for a simulated experience with no backend.
