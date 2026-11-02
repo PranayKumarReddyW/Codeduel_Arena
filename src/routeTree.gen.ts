@@ -10,33 +10,128 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as HistoryRouteImport } from './routes/history'
+import { Route as LeaderboardRouteImport } from './routes/leaderboard'
+import { Route as MatchmakingRouteImport } from './routes/matchmaking'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ArenaMatchIdRouteImport } from './routes/arena.$matchId'
+import { Route as ResultMatchIdRouteImport } from './routes/result.$matchId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeaderboardRoute = LeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MatchmakingRoute = MatchmakingRouteImport.update({
+  id: '/matchmaking',
+  path: '/matchmaking',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArenaMatchIdRoute = ArenaMatchIdRouteImport.update({
+  id: '/arena/$matchId',
+  path: '/arena/$matchId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResultMatchIdRoute = ResultMatchIdRouteImport.update({
+  id: '/result/$matchId',
+  path: '/result/$matchId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/history': typeof HistoryRoute
+  '/leaderboard': typeof LeaderboardRoute
+  '/matchmaking': typeof MatchmakingRoute
+  '/profile': typeof ProfileRoute
+  '/arena/$matchId': typeof ArenaMatchIdRoute
+  '/result/$matchId': typeof ResultMatchIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/history': typeof HistoryRoute
+  '/leaderboard': typeof LeaderboardRoute
+  '/matchmaking': typeof MatchmakingRoute
+  '/profile': typeof ProfileRoute
+  '/arena/$matchId': typeof ArenaMatchIdRoute
+  '/result/$matchId': typeof ResultMatchIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/history': typeof HistoryRoute
+  '/leaderboard': typeof LeaderboardRoute
+  '/matchmaking': typeof MatchmakingRoute
+  '/profile': typeof ProfileRoute
+  '/arena/$matchId': typeof ArenaMatchIdRoute
+  '/result/$matchId': typeof ResultMatchIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/history'
+    | '/leaderboard'
+    | '/matchmaking'
+    | '/profile'
+    | '/arena/$matchId'
+    | '/result/$matchId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/history'
+    | '/leaderboard'
+    | '/matchmaking'
+    | '/profile'
+    | '/arena/$matchId'
+    | '/result/$matchId'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/history'
+    | '/leaderboard'
+    | '/matchmaking'
+    | '/profile'
+    | '/arena/$matchId'
+    | '/result/$matchId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
+  HistoryRoute: typeof HistoryRoute
+  LeaderboardRoute: typeof LeaderboardRoute
+  MatchmakingRoute: typeof MatchmakingRoute
+  ProfileRoute: typeof ProfileRoute
+  ArenaMatchIdRoute: typeof ArenaMatchIdRoute
+  ResultMatchIdRoute: typeof ResultMatchIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +143,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leaderboard': {
+      id: '/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof LeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/matchmaking': {
+      id: '/matchmaking'
+      path: '/matchmaking'
+      fullPath: '/matchmaking'
+      preLoaderRoute: typeof MatchmakingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/arena/$matchId': {
+      id: '/arena/$matchId'
+      path: '/arena/$matchId'
+      fullPath: '/arena/$matchId'
+      preLoaderRoute: typeof ArenaMatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/result/$matchId': {
+      id: '/result/$matchId'
+      path: '/result/$matchId'
+      fullPath: '/result/$matchId'
+      preLoaderRoute: typeof ResultMatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
+  HistoryRoute: HistoryRoute,
+  LeaderboardRoute: LeaderboardRoute,
+  MatchmakingRoute: MatchmakingRoute,
+  ProfileRoute: ProfileRoute,
+  ArenaMatchIdRoute: ArenaMatchIdRoute,
+  ResultMatchIdRoute: ResultMatchIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
