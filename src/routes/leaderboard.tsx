@@ -39,7 +39,7 @@ function Leaderboard() {
   }, [period]);
 
   const filtered = ranked.filter((p) => (p.name + p.handle).toLowerCase().includes(q.toLowerCase()));
-  const podium = [ranked[1], ranked[0], ranked[2]];
+  const podium = [ranked[1]!, ranked[0]!, ranked[2]!];
 
   return (
     <AppShell>

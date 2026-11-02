@@ -44,8 +44,8 @@ function Matchmaking() {
   useEffect(() => {
     if (!user || phase !== "searching" || elapsed < searchFor) return;
     const near = [...PLAYERS].sort((a, b) => Math.abs(a.rating - user.rating) - Math.abs(b.rating - user.rating)).slice(0, 4);
-    const opp = near[Math.floor(Math.random() * near.length)];
-    const problem = PROBLEMS[Math.floor(Math.random() * PROBLEMS.length)];
+    const opp = near[Math.floor(Math.random() * near.length)]!;
+    const problem = PROBLEMS[Math.floor(Math.random() * PROBLEMS.length)]!;
     setMatch({ id: newMatchId(), opp: { ...opp, rating: user.rating + Math.round((Math.random() - 0.5) * 120) }, problemId: problem.id });
     setPhase("found");
   }, [elapsed, phase, user, searchFor]);
@@ -63,7 +63,7 @@ function Matchmaking() {
 
   if (!user) return <Loading />;
   const s = statsOf(user);
-  const cyc = PLAYERS[cycle % PLAYERS.length];
+  const cyc = PLAYERS[cycle % PLAYERS.length]!;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
