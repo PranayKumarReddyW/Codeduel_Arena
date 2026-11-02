@@ -18,7 +18,7 @@ export function Logo({ className }: { className?: string }) {
   );
 }
 
-export function PlayerAvatar({ name, hue = 270, size = 40, className }: { name: string; hue?: number; size?: number; className?: string }) {
+export function PlayerAvatar({ name, hue = 270, size = 40, className }: { name: string; hue?: number | undefined; size?: number; className?: string }) {
   const initials = name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
   return (
     <div

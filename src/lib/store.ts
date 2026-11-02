@@ -21,7 +21,7 @@ export interface UserState {
   rating: number;
   languages: Language[];
   matches: MatchRecord[];
-  pending?: { matchId: string; opponentId: string; problemId: string };
+  pending?: { matchId: string; opponentId: string; problemId: string } | undefined;
 }
 
 const KEY = "codeduel:user:v1";
@@ -35,8 +35,8 @@ function seed(): UserState {
     const win = (i * 7) % 5 !== 0 && i % 4 !== 3;
     const delta = win ? 18 + ((i * 3) % 12) : -(12 + ((i * 5) % 10));
     rating += delta;
-    const prob = PROBLEMS[i % PROBLEMS.length];
-    const opp = PLAYERS[6 + (i % 9)];
+    const prob = PROBLEMS[i % PROBLEMS.length]!;
+    const opp = PLAYERS[6 + (i % 9)]!;
     matches.push({
       id: `M-${(48210 + i).toString(36).toUpperCase()}`,
       opponentId: opp.id,
@@ -46,7 +46,7 @@ function seed(): UserState {
       delta,
       duration: 240 + ((i * 97) % 900),
       date: new Date(now - (23 - i) * 36 * 3600 * 1000).toISOString(),
-      language: (["python", "javascript", "cpp", "python"] as Language[])[i % 4],
+      language: (["python", "javascript", "cpp", "python"] as Language[])[i % 4]!,
       ratingAfter: rating,
     });
   }

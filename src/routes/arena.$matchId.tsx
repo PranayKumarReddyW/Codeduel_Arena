@@ -48,11 +48,11 @@ function Arena() {
   const setup = useMemo(() => {
     if (user?.pending?.matchId === matchId) return user.pending;
     const h = hash(matchId);
-    return { matchId, opponentId: PLAYERS[h % PLAYERS.length].id, problemId: PROBLEMS[h % PROBLEMS.length].id };
+    return { matchId, opponentId: PLAYERS[h % PLAYERS.length]!.id, problemId: PROBLEMS[h % PROBLEMS.length]!.id };
   }, [user, matchId]);
 
   const problem = getProblem(setup.problemId);
-  const opp = getPlayer(setup.opponentId) ?? PLAYERS[0];
+  const opp = getPlayer(setup.opponentId) ?? PLAYERS[0]!;
 
   const [lang, setLang] = useState<Language>("python");
   const [codes, setCodes] = useState<Record<string, string>>({});
@@ -139,7 +139,7 @@ function Arena() {
     if (kind === "run") {
       setLog((l) => [...l, ok ? `✓ ${res.length}/${res.length} sample tests passed` : `✗ 0/${res.length} sample tests passed`]);
     } else if (ok) {
-      setLog((l) => [...l, "✓ Accepted — 48/48 tests passed", `Runtime: ${res[0].time}ms · Memory: 14.2MB`]);
+      setLog((l) => [...l, "✓ Accepted — 48/48 tests passed", `Runtime: ${res[0]!.time}ms · Memory: 14.2MB`]);
       toast.success("Accepted! You solved it first.");
       setTimeout(() => finish("win"), 900);
     } else {
@@ -234,15 +234,15 @@ function Arena() {
                   <div className="flex gap-2">
                     {problem.tests.map((_, i) => (
                       <button key={i} onClick={() => setActiveCase(i)} className={cn("flex items-center gap-1.5 rounded-md px-3 py-1 font-medium", activeCase === i ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50")}>
-                        {results && (results[i].status === "pass" ? <CheckCircle2 className="h-3 w-3 text-success" /> : <XCircle className="h-3 w-3 text-destructive" />)}
+                        {results && (results[i]!.status === "pass" ? <CheckCircle2 className="h-3 w-3 text-success" /> : <XCircle className="h-3 w-3 text-destructive" />)}
                         Case {i + 1}
                       </button>
                     ))}
                   </div>
                   <div className="mt-3 grid gap-2 font-mono sm:grid-cols-2">
-                    <IO label="Input" value={problem.tests[activeCase].input} />
-                    <IO label="Expected" value={problem.tests[activeCase].expected} />
-                    {results && <IO label={`Your output · ${results[activeCase].time}ms`} value={results[activeCase].output || "(empty)"} tone={results[activeCase].status} />}
+                    <IO label="Input" value={problem.tests[activeCase]!.input} />
+                    <IO label="Expected" value={problem.tests[activeCase]!.expected} />
+                    {results && <IO label={`Your output · ${results[activeCase]!.time}ms`} value={results[activeCase]!.output || "(empty)"} tone={results[activeCase]!.status} />}
                   </div>
                 </>
               ) : (
