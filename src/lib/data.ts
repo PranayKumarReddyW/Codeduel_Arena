@@ -222,7 +222,7 @@ export const LANGUAGES: { id: Language; label: string }[] = [
 ];
 
 export function getProblem(id: string) {
-  return PROBLEMS.find((p) => p.id === id) ?? PROBLEMS[0];
+  return PROBLEMS.find((p) => p.id === id) ?? PROBLEMS[0]!;
 }
 
 export function getPlayer(id: string) {
