@@ -44,6 +44,7 @@ public class Judge0Service {
             "cpp", 54,          // C++ (GCC 9.2.0)
             "java", 62          // Java (OpenJDK 13.0.1)
     );
+    public static final String DELIMITER = "__CODEDUEL_RET_VAL__";
 
     public String getFormattedApiUrl() {
         if (apiUrl == null || apiUrl.trim().isEmpty()) {
@@ -163,6 +164,7 @@ public class Judge0Service {
               .append("                _fn = getattr(_sol, _methods[0])\n")
               .append("        if _fn:\n")
               .append("            _res = _fn(*_args)\n")
+              .append("            print(\"\\n__CODEDUEL_RET_VAL__\")\n")
               .append("            if isinstance(_res, bool):\n")
               .append("                print('true' if _res else 'false')\n")
               .append("            elif isinstance(_res, (list, dict)):\n")
@@ -229,6 +231,7 @@ public class Judge0Service {
               .append("        }\n")
               .append("        if (_fn) {\n")
               .append("            const _res = _fn(..._args);\n")
+              .append("            console.log(\"\\n__CODEDUEL_RET_VAL__\");\n")
               .append("            if (typeof _res === 'boolean') {\n")
               .append("                console.log(_res ? 'true' : 'false');\n")
               .append("            } else if (typeof _res === 'object' && _res !== null) {\n")
@@ -247,11 +250,12 @@ public class Judge0Service {
 
     private String wrapJava(String code, String methodName) {
         if (code.contains("public static void main")) return code;
+        String sanitizedCode = code.replaceAll("\\bpublic\\s+class\\s+Solution\\b", "class Solution");
         StringBuilder sb = new StringBuilder();
-        if (!code.contains("package ")) {
+        if (!sanitizedCode.contains("package ")) {
             sb.append("import java.util.*;\nimport java.util.stream.*;\nimport java.lang.reflect.*;\n\n");
         }
-        sb.append(code);
+        sb.append(sanitizedCode);
         sb.append("\n\npublic class Main {\n")
           .append("    public static void main(String[] args) throws Exception {\n")
           .append("        java.util.Scanner sc = new java.util.Scanner(System.in);\n")
@@ -318,6 +322,7 @@ public class Judge0Service {
           .append("        return raw;\n")
           .append("    }\n\n")
           .append("    static void printResult(Object res) {\n")
+          .append("        System.out.println(\"\\n__CODEDUEL_RET_VAL__\");\n")
           .append("        if (res == null) return;\n")
           .append("        if (res instanceof int[]) {\n")
           .append("            System.out.println(java.util.Arrays.toString((int[]) res).replaceAll(\"\\\\s+\", \"\"));\n")
@@ -383,7 +388,8 @@ public class Judge0Service {
           .append("        line.erase(line.find_last_not_of(\" \\t\\r\\n\") + 1);\n")
           .append("        if (!line.empty()) lines.push_back(line);\n")
           .append("    }\n")
-          .append("    Solution sol;\n");
+          .append("    Solution sol;\n")
+          .append("    cout << \"\\n__CODEDUEL_RET_VAL__\\n\";\n");
 
         String m = methodName != null ? methodName : "twoSum";
         switch (m) {
@@ -511,25 +517,54 @@ public class Judge0Service {
                 double time = node.path("time").asDouble(0.0) * 1000.0; // convert to ms
                 double memory = node.path("memory").asDouble(0.0) / 1024.0; // convert KB to MB
 
-                String cleanStdout = stdout.replaceAll("\\s+", "");
-                String cleanExpected = tc.getExpected() != null ? tc.getExpected().replaceAll("\\s+", "") : "";
-                boolean outputMatches = !cleanStdout.isEmpty() && cleanStdout.equalsIgnoreCase(cleanExpected);
+                String userStdout = "";
+                String returnVal = stdout;
+                int delimIdx = stdout.indexOf(DELIMITER);
+                if (delimIdx >= 0) {
+                    userStdout = stdout.substring(0, delimIdx).trim();
+                    returnVal = stdout.substring(delimIdx + DELIMITER.length()).trim();
+                }
 
-                boolean passed = (statusId == 3) || outputMatches;
-                String output = !stdout.isEmpty() ? stdout : (!stderr.isEmpty() ? stderr : compileOutput);
-                if (output.isEmpty()) {
-                    output = passed ? tc.getExpected() : "(empty output)";
+                if (!stderr.isEmpty()) {
+                    if (!userStdout.isEmpty()) userStdout += "\n";
+                    userStdout += stderr;
+                }
+                if (!compileOutput.isEmpty()) {
+                    if (!userStdout.isEmpty()) userStdout += "\n";
+                    userStdout += compileOutput;
+                }
+
+                String cleanReturn = returnVal.replaceAll("\\s+", "");
+                String cleanExpected = tc.getExpected() != null ? tc.getExpected().replaceAll("\\s+", "") : "";
+                boolean outputMatches = !cleanReturn.isEmpty() && cleanReturn.equalsIgnoreCase(cleanExpected);
+
+                boolean passed = false;
+                if (statusId == 3) {
+                    // Judge0 Accepted
+                    passed = outputMatches || cleanReturn.isEmpty();
+                } else if (statusId == 4 || statusId == 0) {
+                    passed = outputMatches;
+                }
+                // Any compilation error (6), runtime error (7..12), or TLE (5) cannot pass
+                if (statusId == 5 || statusId == 6 || (statusId >= 7 && statusId <= 14)) {
+                    passed = false;
+                }
+
+                String displayOutput = !returnVal.isEmpty() ? returnVal : (!stderr.isEmpty() ? stderr : compileOutput);
+                if (displayOutput.isEmpty()) {
+                    displayOutput = passed ? tc.getExpected() : "(empty output)";
                 }
 
                 results.add(new TestCaseResult(
                         passed ? "pass" : "fail",
-                        output,
+                        displayOutput,
                         tc.getExpected(),
+                        userStdout,
                         time > 0 ? Math.round(time) : 15,
                         memory > 0 ? Math.round(memory * 10.0) / 10.0 : 14.2
                 ));
             } catch (Exception e) {
-                log.warn("Judge0 submission attempt failed: {}. Falling back to internal evaluator.", e.getMessage());
+                log.warn("Judge0 submission attempt failed: {}. Falling back to error result.", e.getMessage());
                 return executeWithFallback(language, code, tests, starterCode);
             }
         }
@@ -538,41 +573,19 @@ public class Judge0Service {
     }
 
     private List<TestCaseResult> executeWithFallback(String language, String code, List<TestCase> tests, String starterCode) {
-        log.info("[Judge0Service] Running in fallback evaluation mode. Set JUDGE0_API_KEY when available for live Judge0 execution.");
-        boolean implemented = looksImplemented(code, starterCode);
-
+        log.warn("[Judge0Service] Code execution failed or Judge0 service is unreachable.");
         List<TestCaseResult> results = new ArrayList<>();
-        int codeHash = Math.abs(code.hashCode());
-
-        for (int i = 0; i < tests.size(); i++) {
-            TestCase tc = tests.get(i);
-            String status = implemented ? "pass" : "fail";
-            String output;
-            if (implemented) {
-                output = tc.getExpected();
-            } else {
-                if ("python".equalsIgnoreCase(language)) {
-                    output = "None";
-                } else if ("javascript".equalsIgnoreCase(language)) {
-                    output = i == 0 ? "undefined" : "";
-                } else {
-                    output = "";
-                }
-            }
-            double time = 8 + ((codeHash + i * 13) % 40);
-            double memory = 14.2;
-
-            results.add(new TestCaseResult(status, output, tc.getExpected(), time, memory));
+        for (TestCase tc : tests) {
+            results.add(new TestCaseResult(
+                    "fail",
+                    "Execution Error: Judge0 service is unreachable. Verify Judge0 is running on port 2358.",
+                    tc.getExpected(),
+                    "Could not connect to code execution runner.",
+                    0,
+                    0
+            ));
         }
-
         return results;
-    }
-
-    private boolean looksImplemented(String code, String starter) {
-        if (code == null) return false;
-        String stripped = code.replaceAll("//.*|#.*|/\\*[\\s\\S]*?\\*/", "").replaceAll("\\s+", "");
-        String base = starter != null ? starter.replaceAll("//.*|#.*|/\\*[\\s\\S]*?\\*/", "").replaceAll("\\s+", "") : "";
-        return stripped.length() > base.length() + 25 && !code.trim().endsWith("pass");
     }
 }
 

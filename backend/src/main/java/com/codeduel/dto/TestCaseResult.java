@@ -4,6 +4,7 @@ public class TestCaseResult {
     private String status; // "pass" | "fail"
     private String output;
     private String expected;
+    private String stdout; // User print / console output
     private double time; // ms
     private double memory; // MB
 
@@ -11,9 +12,14 @@ public class TestCaseResult {
     }
 
     public TestCaseResult(String status, String output, String expected, double time, double memory) {
+        this(status, output, expected, "", time, memory);
+    }
+
+    public TestCaseResult(String status, String output, String expected, String stdout, double time, double memory) {
         this.status = status;
         this.output = output;
         this.expected = expected;
+        this.stdout = stdout;
         this.time = time;
         this.memory = memory;
     }
@@ -42,6 +48,14 @@ public class TestCaseResult {
         this.expected = expected;
     }
 
+    public String getStdout() {
+        return stdout;
+    }
+
+    public void setStdout(String stdout) {
+        this.stdout = stdout;
+    }
+
     public double getTime() {
         return time;
     }
@@ -58,4 +72,3 @@ public class TestCaseResult {
         this.memory = memory;
     }
 }
-

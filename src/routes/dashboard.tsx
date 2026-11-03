@@ -97,8 +97,8 @@ function Dashboard() {
           {/* Platform Quick Stats */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard
-              label="Online Battlers"
-              value={platformStats?.activeBattlers?.toLocaleString() || "1,420"}
+              label="Matchmaking"
+              value="Active"
               icon={Radar}
               tone="accent"
             />
@@ -208,7 +208,7 @@ function Dashboard() {
               <div>
                 <span className="inline-flex items-center gap-2 text-xs font-medium text-success">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
-                  {platformStats?.activeBattlers ? `${platformStats.activeBattlers.toLocaleString()} players online` : "Live Matchmaking Queue"}
+                  Live Matchmaking Queue
                 </span>
                 <h2 className="mt-3 text-3xl font-black">Ready for Battle?</h2>
                 <p className="mt-2 max-w-sm text-muted-foreground">

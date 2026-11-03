@@ -58,6 +58,16 @@ public class CodeExecutionService {
             logs.add("✗ " + passedCount + "/" + results.size() + " sample tests passed");
         }
 
+        for (int i = 0; i < results.size(); i++) {
+            TestCaseResult r = results.get(i);
+            if (r.getStdout() != null && !r.getStdout().trim().isEmpty()) {
+                logs.add("--- Case " + (i + 1) + " Console Output ---");
+                for (String line : r.getStdout().split("\n")) {
+                    logs.add("  " + line);
+                }
+            }
+        }
+
         ExecuteCodeResponse resp = new ExecuteCodeResponse();
         resp.setSuccess(allPassed);
         resp.setLogs(logs);
@@ -112,6 +122,16 @@ public class CodeExecutionService {
             logs.add("✗ Wrong Answer on test " + firstFail + " (" + passedTests + "/" + totalTests + " passed)");
             if (!failDetail.isEmpty()) {
                 logs.add(failDetail);
+            }
+        }
+
+        for (int i = 0; i < allResults.size(); i++) {
+            TestCaseResult r = allResults.get(i);
+            if (r.getStdout() != null && !r.getStdout().trim().isEmpty()) {
+                logs.add("--- Case " + (i + 1) + " Console Output ---");
+                for (String line : r.getStdout().split("\n")) {
+                    logs.add("  " + line);
+                }
             }
         }
 

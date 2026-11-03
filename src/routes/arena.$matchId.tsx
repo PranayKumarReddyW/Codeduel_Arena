@@ -35,7 +35,7 @@ export const Route = createFileRoute("/arena/$matchId")({
 });
 
 const MATCH_SECONDS = 20 * 60;
-type TestResult = { status: "pass" | "fail"; output: string; expected?: string; time: number };
+type TestResult = { status: "pass" | "fail"; output: string; expected?: string; stdout?: string; time: number };
 type OppEvent = { t: number; text: string; tone: "info" | "warn" | "good" | "bad" };
 
 function Arena() {
@@ -377,10 +377,11 @@ function Arena() {
         });
 
         setLog(response.logs);
-        const mappedResults: TestResult[] = response.results.map((r) => ({
+        const mappedResults: TestResult[] = response.results.map((r: any) => ({
           status: r.status,
           output: r.output,
           expected: r.expected,
+          stdout: r.stdout,
           time: r.time,
         }));
         setResults(mappedResults);
@@ -412,10 +413,11 @@ function Arena() {
         });
 
         setLog(response.logs);
-        const mappedResults: TestResult[] = response.results.map((r) => ({
+        const mappedResults: TestResult[] = response.results.map((r: any) => ({
           status: r.status,
           output: r.output,
           expected: r.expected,
+          stdout: r.stdout,
           time: r.time,
         }));
         setResults(mappedResults);
@@ -637,6 +639,14 @@ function Arena() {
                         tone={results[activeCase]!.status}
                       />
                     )}
+                    {results && results[activeCase] && results[activeCase]!.stdout ? (
+                      <div className="sm:col-span-2">
+                        <IO
+                          label="Stdout / Print Output"
+                          value={results[activeCase]!.stdout!}
+                        />
+                      </div>
+                    ) : null}
                   </div>
                 </>
               ) : (

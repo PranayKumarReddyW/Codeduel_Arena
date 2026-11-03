@@ -90,19 +90,6 @@ function LoginPage() {
     }
   }
 
-  async function quickDemoLogin(handle: string) {
-    setLoading(true);
-    try {
-      await login(handle, "password123");
-      toast.success(`Logged in as @${handle}!`);
-      navigate({ to: "/dashboard" });
-    } catch (err: any) {
-      toast.error("Demo login failed: " + err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
     <div className="relative min-h-screen flex flex-col justify-between overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-30 [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_75%)]" />
@@ -265,41 +252,6 @@ function LoginPage() {
               </motion.form>
             )}
           </AnimatePresence>
-
-          <div className="relative my-6 text-center text-xs text-muted-foreground">
-            <span className="relative z-10 bg-card px-2">or quick start with demo accounts</span>
-            <div className="absolute inset-0 top-1/2 border-t border-border" />
-          </div>
-
-          <div className="space-y-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={loading}
-              onClick={() => quickDemoLogin("alexr")}
-              className="w-full text-xs justify-between hover:border-primary/50"
-            >
-              <span className="flex items-center gap-1.5 font-medium">
-                <Zap className="h-3.5 w-3.5 text-warning" />
-                Sign in as <strong>@alexr</strong>
-              </span>
-              <span className="font-mono text-muted-foreground">Rating 1180</span>
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              disabled={loading}
-              onClick={() => quickDemoLogin("demo")}
-              className="w-full text-xs justify-between hover:border-accent/50"
-            >
-              <span className="flex items-center gap-1.5 font-medium">
-                <Zap className="h-3.5 w-3.5 text-accent" />
-                Sign in as <strong>@demo</strong>
-              </span>
-              <span className="font-mono text-muted-foreground">Rating 1250</span>
-            </Button>
-          </div>
         </div>
       </div>
 
