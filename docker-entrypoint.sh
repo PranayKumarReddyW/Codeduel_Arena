@@ -13,7 +13,7 @@ export DATA_DIR="${DATA_DIR:-/app/data}"
 
 # Launch Spring Boot backend in background
 echo "==> [1/3] Booting Spring Boot REST API & WebSocket on port 8088..."
-java -jar /app/backend/codeduel-backend.jar &
+SERVER_PORT=8088 java -jar /app/backend/codeduel-backend.jar &
 BACKEND_PID=$!
 
 # Launch TanStack Start / Node SSR server on port 3000
