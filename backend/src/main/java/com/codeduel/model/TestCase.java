@@ -12,7 +12,7 @@ public class TestCase {
     @Column(length = 4000)
     private String expected;
 
-    private boolean hidden = false;
+    private Boolean hidden = false;
 
     public TestCase() {
     }
@@ -23,18 +23,18 @@ public class TestCase {
         this.hidden = false;
     }
 
-    public TestCase(String input, String expected, boolean hidden) {
+    public TestCase(String input, String expected, Boolean hidden) {
         this.input = input;
         this.expected = expected;
-        this.hidden = hidden;
+        this.hidden = hidden != null ? hidden : false;
     }
 
     public boolean isHidden() {
-        return hidden;
+        return Boolean.TRUE.equals(hidden);
     }
 
-    public void setHidden(boolean hidden) {
-        this.hidden = hidden;
+    public void setHidden(Boolean hidden) {
+        this.hidden = hidden != null ? hidden : false;
     }
 
     public String getInput() {
