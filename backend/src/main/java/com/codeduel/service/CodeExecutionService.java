@@ -41,7 +41,7 @@ public class CodeExecutionService {
         List<TestCaseResult> results = judge0Service.executeTests(
                 req.getLanguage(),
                 req.getCode(),
-                problem.getTests(),
+                problem.getSampleTests(),
                 starter
         );
 
@@ -74,42 +74,55 @@ public class CodeExecutionService {
         }
 
         String starter = getStarterForLanguage(problem, req.getLanguage());
-        List<TestCaseResult> sampleResults = judge0Service.executeTests(
+        // Run all test cases (both visible sample tests and hidden tests)
+        List<TestCaseResult> allResults = judge0Service.executeTests(
                 req.getLanguage(),
                 req.getCode(),
                 problem.getTests(),
                 starter
         );
 
-        long samplePassed = sampleResults.stream().filter(r -> "pass".equalsIgnoreCase(r.getStatus())).count();
-        boolean accepted = samplePassed == sampleResults.size() && !sampleResults.isEmpty();
+        long passedCount = allResults.stream().filter(r -> "pass".equalsIgnoreCase(r.getStatus())).count();
+        int totalTests = allResults.size();
+        int passedTests = (int) passedCount;
+        boolean accepted = passedCount == totalTests && totalTests > 0;
 
-        int totalHiddenTests = 48;
-        int passedTests = accepted ? 48 : (int) samplePassed;
-        double runtime = sampleResults.isEmpty() ? 18.0 : sampleResults.get(0).getTime();
-        double memory = 14.2;
+        double runtime = allResults.isEmpty() ? 15.0 : allResults.stream().mapToDouble(TestCaseResult::getTime).max().orElse(15.0);
+        double memory = allResults.isEmpty() ? 14.2 : allResults.stream().mapToDouble(TestCaseResult::getMemory).max().orElse(14.2);
 
         String langLabel = LANGUAGE_LABELS.getOrDefault(req.getLanguage().toLowerCase(), req.getLanguage());
         List<String> logs = new ArrayList<>();
         logs.add("> Compiling " + langLabel + "...");
-        logs.add("> Running 48 hidden tests...");
+        logs.add("> Running " + totalTests + " test cases (sample + hidden)...");
 
         if (accepted) {
-            logs.add("✓ Accepted — " + totalHiddenTests + "/" + totalHiddenTests + " tests passed");
+            logs.add("✓ Accepted — " + totalTests + "/" + totalTests + " tests passed");
             logs.add("Runtime: " + (int) runtime + "ms · Memory: " + memory + "MB");
         } else {
-            logs.add("✗ Wrong Answer on test 1");
-            logs.add("Expected output did not match.");
+            int firstFail = 1;
+            String failDetail = "";
+            for (int i = 0; i < allResults.size(); i++) {
+                if (!"pass".equalsIgnoreCase(allResults.get(i).getStatus())) {
+                    firstFail = i + 1;
+                    TestCaseResult r = allResults.get(i);
+                    failDetail = "Expected: " + r.getExpected() + " · Got: " + r.getOutput();
+                    break;
+                }
+            }
+            logs.add("✗ Wrong Answer on test " + firstFail + " (" + passedTests + "/" + totalTests + " passed)");
+            if (!failDetail.isEmpty()) {
+                logs.add(failDetail);
+            }
         }
 
         SubmitCodeResponse resp = new SubmitCodeResponse();
         resp.setAccepted(accepted);
         resp.setPassedTests(passedTests);
-        resp.setTotalTests(totalHiddenTests);
+        resp.setTotalTests(totalTests);
         resp.setRuntimeMs(runtime);
         resp.setMemoryMb(memory);
         resp.setLogs(logs);
-        resp.setResults(sampleResults);
+        resp.setResults(allResults);
         resp.setMock(!judge0Service.isLiveJudge0Configured());
 
         return resp;

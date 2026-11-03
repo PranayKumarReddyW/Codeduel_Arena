@@ -36,7 +36,7 @@ public class ProblemDto {
         dto.setOutputFormat(p.getOutputFormat());
         dto.setConstraints(p.getConstraints());
         dto.setExamples(p.getExamples());
-        dto.setTests(p.getTests());
+        dto.setTests(p.getSampleTests());
 
         Map<String, String> starters = new HashMap<>();
         starters.put("python", p.getStarterPython());

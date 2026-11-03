@@ -168,5 +168,15 @@ public class Problem {
     public void setStarterJava(String starterJava) {
         this.starterJava = starterJava;
     }
+
+    public List<TestCase> getSampleTests() {
+        if (tests == null) return java.util.Collections.emptyList();
+        return tests.stream().filter(t -> !t.isHidden()).toList();
+    }
+
+    public List<TestCase> getHiddenTests() {
+        if (tests == null) return java.util.Collections.emptyList();
+        return tests.stream().filter(TestCase::isHidden).toList();
+    }
 }
 

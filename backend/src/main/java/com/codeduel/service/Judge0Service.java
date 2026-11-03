@@ -100,93 +100,342 @@ public class Judge0Service {
         }
     }
 
-    public String wrapCodeForExecution(String language, String code) {
+    public String extractMethodName(String starterCode) {
+        if (starterCode == null || starterCode.isEmpty()) return null;
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(?:def|function|\\b[a-zA-Z0-9_<>\\[\\]]+)\\s+([a-zA-Z0-9_]+)\\s*\\(");
+        java.util.regex.Matcher matcher = pattern.matcher(starterCode);
+        Set<String> keywords = Set.of("if", "for", "while", "switch", "catch", "Solution", "public", "private", "protected", "class", "void", "return");
+        while (matcher.find()) {
+            String name = matcher.group(1);
+            if (!keywords.contains(name)) {
+                return name;
+            }
+        }
+        return null;
+    }
+
+    public String wrapCodeForExecution(String language, String code, String starterCode) {
         if (code == null) return "";
         String lang = language != null ? language.toLowerCase().trim() : "python";
+        String methodName = extractMethodName(starterCode);
 
         if ("python".equals(lang)) {
-            StringBuilder sb = new StringBuilder();
-            if (!code.contains("from __future__ import annotations")) {
-                sb.append("from __future__ import annotations\n");
-            }
-            sb.append(code);
-            if (!code.contains("__name__ == '__main__'") && !code.contains("sys.stdin")) {
-                sb.append("\n\nif __name__ == '__main__':\n")
-                  .append("    import sys, json\n")
-                  .append("    try:\n")
-                  .append("        _raw_lines = [l.strip() for l in sys.stdin.read().splitlines() if l.strip()]\n")
-                  .append("        _args = []\n")
-                  .append("        for _l in _raw_lines:\n")
-                  .append("            try:\n")
-                  .append("                _args.append(json.loads(_l))\n")
-                  .append("            except Exception:\n")
-                  .append("                _args.append(_l)\n")
-                  .append("        _sol = Solution()\n")
-                  .append("        _methods = [m for m in dir(_sol) if not m.startswith('_') and callable(getattr(_sol, m))]\n")
-                  .append("        if _methods:\n")
-                  .append("            _fn = getattr(_sol, _methods[0])\n")
-                  .append("            _res = _fn(*_args)\n")
-                  .append("            if isinstance(_res, bool):\n")
-                  .append("                print('true' if _res else 'false')\n")
-                  .append("            elif isinstance(_res, (list, dict)):\n")
-                  .append("                print(json.dumps(_res, separators=(',', ':')))\n")
-                  .append("            else:\n")
-                  .append("                print(_res)\n")
-                  .append("    except Exception as _e:\n")
-                  .append("        import traceback\n")
-                  .append("        traceback.print_exc()\n");
-            }
-            return sb.toString();
+            return wrapPython(code, methodName);
+        } else if ("javascript".equals(lang)) {
+            return wrapJavascript(code, methodName);
+        } else if ("java".equals(lang)) {
+            return wrapJava(code, methodName);
+        } else if ("cpp".equals(lang)) {
+            return wrapCpp(code, methodName);
         }
-
-        if ("javascript".equals(lang)) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(code);
-            if (!code.contains("fs.readFileSync") && !code.contains("process.stdin")) {
-                sb.append("\n\nconst _fs = require('fs');\n")
-                  .append("try {\n")
-                  .append("    const _input = _fs.readFileSync(0, 'utf-8').trim();\n")
-                  .append("    if (_input) {\n")
-                  .append("        const _lines = _input.split('\\n').map(l => l.trim()).filter(Boolean);\n")
-                  .append("        const _args = _lines.map(line => {\n")
-                  .append("            try { return JSON.parse(line); } catch (e) { return line; }\n")
-                  .append("        });\n")
-                  .append("        let _fn = null;\n")
-                  .append("        if (typeof twoSum === 'function') _fn = twoSum;\n")
-                  .append("        else if (typeof isValid === 'function') _fn = isValid;\n")
-                  .append("        else if (typeof lengthOfLongestSubstring === 'function') _fn = lengthOfLongestSubstring;\n")
-                  .append("        else if (typeof merge === 'function') _fn = merge;\n")
-                  .append("        else if (typeof trap === 'function') _fn = trap;\n")
-                  .append("        else {\n")
-                  .append("            const _keys = Object.keys(global).filter(k => typeof global[k] === 'function' && !k.startsWith('_'));\n")
-                  .append("            if (_keys.length > 0) _fn = global[_keys[_keys.length - 1]];\n")
-                  .append("        }\n")
-                  .append("        if (_fn) {\n")
-                  .append("            const _res = _fn(..._args);\n")
-                  .append("            if (typeof _res === 'boolean') {\n")
-                  .append("                console.log(_res ? 'true' : 'false');\n")
-                  .append("            } else if (typeof _res === 'object' && _res !== null) {\n")
-                  .append("                console.log(JSON.stringify(_res));\n")
-                  .append("            } else {\n")
-                  .append("                console.log(_res);\n")
-                  .append("            }\n")
-                  .append("        }\n")
-                  .append("    }\n")
-                  .append("} catch (_err) {\n")
-                  .append("    console.error(_err);\n")
-                  .append("}\n");
-            }
-            return sb.toString();
-        }
-
         return code;
+    }
+
+    private String wrapPython(String code, String methodName) {
+        StringBuilder sb = new StringBuilder();
+        if (!code.contains("from __future__ import annotations")) {
+            sb.append("from __future__ import annotations\n");
+        }
+        if (!code.contains("import sys")) {
+            sb.append("import sys, json, math, collections, heapq, bisect, itertools\n");
+            sb.append("from typing import *\n\n");
+        }
+        sb.append(code);
+
+        if (!code.contains("__name__ == '__main__'") && !code.contains("sys.stdin")) {
+            sb.append("\n\nif __name__ == '__main__':\n")
+              .append("    import sys, json\n")
+              .append("    try:\n")
+              .append("        _raw = sys.stdin.read().strip()\n")
+              .append("        _lines = [l.strip() for l in _raw.splitlines() if l.strip()]\n")
+              .append("        _args = []\n")
+              .append("        for _l in _lines:\n")
+              .append("            try:\n")
+              .append("                _args.append(json.loads(_l))\n")
+              .append("            except Exception:\n")
+              .append("                _args.append(_l)\n")
+              .append("        _sol = Solution()\n")
+              .append("        _target = \"").append(methodName != null ? methodName : "").append("\"\n")
+              .append("        _fn = getattr(_sol, _target, None) if _target else None\n")
+              .append("        if not _fn:\n")
+              .append("            _methods = [m for m in dir(_sol) if not m.startswith('_') and callable(getattr(_sol, m))]\n")
+              .append("            if _methods:\n")
+              .append("                _fn = getattr(_sol, _methods[0])\n")
+              .append("        if _fn:\n")
+              .append("            _res = _fn(*_args)\n")
+              .append("            if isinstance(_res, bool):\n")
+              .append("                print('true' if _res else 'false')\n")
+              .append("            elif isinstance(_res, (list, dict)):\n")
+              .append("                print(json.dumps(_res, separators=(',', ':')))\n")
+              .append("            else:\n")
+              .append("                print(_res)\n")
+              .append("    except Exception as _e:\n")
+              .append("        import traceback\n")
+              .append("        traceback.print_exc()\n");
+        }
+        return sb.toString();
+    }
+
+    private String wrapJavascript(String code, String methodName) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(code);
+        if (!code.contains("fs.readFileSync") && !code.contains("process.stdin")) {
+            sb.append("\n\nconst _fs = require('fs');\n")
+              .append("try {\n")
+              .append("    const _input = _fs.readFileSync(0, 'utf-8').trim();\n")
+              .append("    if (_input) {\n")
+              .append("        const _lines = _input.split('\\n').map(l => l.trim()).filter(Boolean);\n")
+              .append("        const _args = _lines.map(line => {\n")
+              .append("            try { return JSON.parse(line); } catch (e) { return line; }\n")
+              .append("        });\n")
+              .append("        const _target = \"").append(methodName != null ? methodName : "").append("\";\n")
+              .append("        let _fn = null;\n")
+              .append("        if (_target && typeof global[_target] === 'function') {\n")
+              .append("            _fn = global[_target];\n")
+              .append("        } else if (_target && typeof Solution === 'function') {\n")
+              .append("            const _inst = new Solution();\n")
+              .append("            if (typeof _inst[_target] === 'function') _fn = _inst[_target].bind(_inst);\n")
+              .append("        }\n")
+              .append("        if (!_fn) {\n")
+              .append("            const _candidates = [twoSum, isValid, lengthOfLongestSubstring, merge, trap, maxProfit, isPalindrome, maxSubArray, climbStairs, coinChange, search, maxArea];\n")
+              .append("            for (const cand of _candidates) {\n")
+              .append("                if (typeof cand === 'function') { _fn = cand; break; }\n")
+              .append("            }\n")
+              .append("        }\n")
+              .append("        if (!_fn) {\n")
+              .append("            const _keys = Object.keys(global).filter(k => typeof global[k] === 'function' && !k.startsWith('_'));\n")
+              .append("            if (_keys.length > 0) _fn = global[_keys[_keys.length - 1]];\n")
+              .append("        }\n")
+              .append("        if (_fn) {\n")
+              .append("            const _res = _fn(..._args);\n")
+              .append("            if (typeof _res === 'boolean') {\n")
+              .append("                console.log(_res ? 'true' : 'false');\n")
+              .append("            } else if (typeof _res === 'object' && _res !== null) {\n")
+              .append("                console.log(JSON.stringify(_res));\n")
+              .append("            } else {\n")
+              .append("                console.log(_res);\n")
+              .append("            }\n")
+              .append("        }\n")
+              .append("    }\n")
+              .append("} catch (_err) {\n")
+              .append("    console.error(_err);\n")
+              .append("}\n");
+        }
+        return sb.toString();
+    }
+
+    private String wrapJava(String code, String methodName) {
+        if (code.contains("public static void main")) return code;
+        StringBuilder sb = new StringBuilder();
+        if (!code.contains("package ")) {
+            sb.append("import java.util.*;\nimport java.util.stream.*;\nimport java.lang.reflect.*;\n\n");
+        }
+        sb.append(code);
+        sb.append("\n\npublic class Main {\n")
+          .append("    public static void main(String[] args) throws Exception {\n")
+          .append("        java.util.Scanner sc = new java.util.Scanner(System.in);\n")
+          .append("        java.util.List<String> lines = new java.util.ArrayList<>();\n")
+          .append("        while (sc.hasNextLine()) {\n")
+          .append("            String l = sc.nextLine().trim();\n")
+          .append("            if (!l.isEmpty()) lines.add(l);\n")
+          .append("        }\n")
+          .append("        Solution sol = new Solution();\n")
+          .append("        java.lang.reflect.Method target = null;\n")
+          .append("        String expectedMethod = \"").append(methodName != null ? methodName : "").append("\";\n")
+          .append("        for (java.lang.reflect.Method m : Solution.class.getDeclaredMethods()) {\n")
+          .append("            if (java.lang.reflect.Modifier.isPublic(m.getModifiers()) && !m.getName().startsWith(\"_\")) {\n")
+          .append("                if (m.getName().equals(expectedMethod) || target == null) {\n")
+          .append("                    target = m;\n")
+          .append("                    if (m.getName().equals(expectedMethod)) break;\n")
+          .append("                }\n")
+          .append("            }\n")
+          .append("        }\n")
+          .append("        if (target == null) return;\n")
+          .append("        Class<?>[] paramTypes = target.getParameterTypes();\n")
+          .append("        Object[] callArgs = new Object[paramTypes.length];\n")
+          .append("        for (int i = 0; i < paramTypes.length; i++) {\n")
+          .append("            String inputLine = i < lines.size() ? lines.get(i) : \"\";\n")
+          .append("            callArgs[i] = parseArg(inputLine, paramTypes[i]);\n")
+          .append("        }\n")
+          .append("        Object result = target.invoke(sol, callArgs);\n")
+          .append("        printResult(result);\n")
+          .append("    }\n\n")
+          .append("    static Object parseArg(String raw, Class<?> type) {\n")
+          .append("        raw = raw.trim();\n")
+          .append("        if (raw.startsWith(\"\\\"\") && raw.endsWith(\"\\\"\") && raw.length() >= 2) {\n")
+          .append("            raw = raw.substring(1, raw.length() - 1);\n")
+          .append("        }\n")
+          .append("        if (type == int[].class) {\n")
+          .append("            String clean = raw.replaceAll(\"[\\\\[\\\\]\\\\s]\", \"\");\n")
+          .append("            if (clean.isEmpty()) return new int[0];\n")
+          .append("            String[] parts = clean.split(\",\");\n")
+          .append("            int[] arr = new int[parts.length];\n")
+          .append("            for (int i = 0; i < parts.length; i++) arr[i] = Integer.parseInt(parts[i].trim());\n")
+          .append("            return arr;\n")
+          .append("        } else if (type == int[][].class) {\n")
+          .append("            raw = raw.trim();\n")
+          .append("            if (raw.startsWith(\"[\") && raw.endsWith(\"]\")) raw = raw.substring(1, raw.length() - 1).trim();\n")
+          .append("            if (raw.isEmpty()) return new int[0][0];\n")
+          .append("            String[] rows = raw.split(\"(?<=\\\\])\\\\s*,\\\\s*(?=\\\\[)\");\n")
+          .append("            java.util.List<int[]> rowList = new java.util.ArrayList<>();\n")
+          .append("            for (String r : rows) {\n")
+          .append("                String clean = r.replaceAll(\"[\\\\[\\\\]\\\\s]\", \"\");\n")
+          .append("                if (clean.isEmpty()) continue;\n")
+          .append("                String[] parts = clean.split(\",\");\n")
+          .append("                int[] arr = new int[parts.length];\n")
+          .append("                for (int i = 0; i < parts.length; i++) arr[i] = Integer.parseInt(parts[i].trim());\n")
+          .append("                rowList.add(arr);\n")
+          .append("            }\n")
+          .append("            return rowList.toArray(new int[0][]);\n")
+          .append("        } else if (type == int.class || type == Integer.class) {\n")
+          .append("            return Integer.parseInt(raw);\n")
+          .append("        } else if (type == boolean.class || type == Boolean.class) {\n")
+          .append("            return Boolean.parseBoolean(raw);\n")
+          .append("        } else if (type == String.class) {\n")
+          .append("            return raw;\n")
+          .append("        }\n")
+          .append("        return raw;\n")
+          .append("    }\n\n")
+          .append("    static void printResult(Object res) {\n")
+          .append("        if (res == null) return;\n")
+          .append("        if (res instanceof int[]) {\n")
+          .append("            System.out.println(java.util.Arrays.toString((int[]) res).replaceAll(\"\\\\s+\", \"\"));\n")
+          .append("        } else if (res instanceof int[][]) {\n")
+          .append("            System.out.println(java.util.Arrays.deepToString((int[][]) res).replaceAll(\"\\\\s+\", \"\"));\n")
+          .append("        } else if (res instanceof Boolean) {\n")
+          .append("            System.out.println((Boolean) res ? \"true\" : \"false\");\n")
+          .append("        } else {\n")
+          .append("            System.out.println(res);\n")
+          .append("        }\n")
+          .append("    }\n")
+          .append("}\n");
+        return sb.toString();
+    }
+
+    private String wrapCpp(String code, String methodName) {
+        if (code.contains("int main(")) return code;
+        StringBuilder sb = new StringBuilder();
+        sb.append("#include <iostream>\n#include <vector>\n#include <string>\n#include <sstream>\n#include <algorithm>\n#include <unordered_map>\n#include <unordered_set>\n#include <queue>\n#include <stack>\n#include <cmath>\nusing namespace std;\n\n");
+        sb.append(code);
+        sb.append("\n\n// CodeDuel Driver\n")
+          .append("vector<int> _parseVec(string s) {\n")
+          .append("    vector<int> res;\n")
+          .append("    stringstream ss(s);\n")
+          .append("    char ch;\n")
+          .append("    int val;\n")
+          .append("    while (ss >> ch) {\n")
+          .append("        if (isdigit(ch) || ch == '-') {\n")
+          .append("            ss.putback(ch);\n")
+          .append("            if (ss >> val) res.push_back(val);\n")
+          .append("        }\n")
+          .append("    }\n")
+          .append("    return res;\n")
+          .append("}\n\n")
+          .append("vector<vector<int>> _parse2D(string s) {\n")
+          .append("    vector<vector<int>> res;\n")
+          .append("    size_t i = 0;\n")
+          .append("    while (i < s.size()) {\n")
+          .append("        if (s[i] == '[') {\n")
+          .append("            size_t end = s.find(']', i + 1);\n")
+          .append("            if (end != string::npos && end > i + 1) {\n")
+          .append("                auto v = _parseVec(s.substr(i, end - i + 1));\n")
+          .append("                if (!v.empty()) res.push_back(v);\n")
+          .append("                i = end + 1;\n")
+          .append("            } else i++;\n")
+          .append("        } else i++;\n")
+          .append("    }\n")
+          .append("    return res;\n")
+          .append("}\n\n")
+          .append("string _cleanStr(string s) {\n")
+          .append("    s.erase(0, s.find_first_not_of(\" \\t\\r\\n\"));\n")
+          .append("    s.erase(s.find_last_not_of(\" \\t\\r\\n\") + 1);\n")
+          .append("    if (s.size() >= 2 && s.front() == '\"' && s.back() == '\"') {\n")
+          .append("        return s.substr(1, s.size() - 2);\n")
+          .append("    }\n")
+          .append("    return s;\n")
+          .append("}\n\n")
+          .append("int main() {\n")
+          .append("    vector<string> lines;\n")
+          .append("    string line;\n")
+          .append("    while (getline(cin, line)) {\n")
+          .append("        line.erase(0, line.find_first_not_of(\" \\t\\r\\n\"));\n")
+          .append("        line.erase(line.find_last_not_of(\" \\t\\r\\n\") + 1);\n")
+          .append("        if (!line.empty()) lines.push_back(line);\n")
+          .append("    }\n")
+          .append("    Solution sol;\n");
+
+        String m = methodName != null ? methodName : "twoSum";
+        switch (m) {
+            case "twoSum":
+            case "search":
+                sb.append("    if (lines.size() >= 2) {\n")
+                  .append("        auto nums = _parseVec(lines[0]);\n")
+                  .append("        int target = stoi(lines[1]);\n");
+                if ("twoSum".equals(m)) {
+                    sb.append("        auto res = sol.twoSum(nums, target);\n")
+                      .append("        cout << \"[\" << res[0] << \",\" << res[1] << \"]\" << endl;\n");
+                } else {
+                    sb.append("        cout << sol.search(nums, target) << endl;\n");
+                }
+                sb.append("    }\n");
+                break;
+            case "isValid":
+                sb.append("    if (!lines.empty()) {\n")
+                  .append("        cout << (sol.isValid(_cleanStr(lines[0])) ? \"true\" : \"false\") << endl;\n")
+                  .append("    }\n");
+                break;
+            case "lengthOfLongestSubstring":
+                sb.append("    if (!lines.empty()) {\n")
+                  .append("        cout << sol.lengthOfLongestSubstring(_cleanStr(lines[0])) << endl;\n")
+                  .append("    } else { cout << 0 << endl; }\n");
+                break;
+            case "isPalindrome":
+                sb.append("    if (!lines.empty()) {\n")
+                  .append("        cout << (sol.isPalindrome(_cleanStr(lines[0])) ? \"true\" : \"false\") << endl;\n")
+                  .append("    } else { cout << \"true\" << endl; }\n");
+                break;
+            case "merge":
+                sb.append("    if (!lines.empty()) {\n")
+                  .append("        auto intervals = _parse2D(lines[0]);\n")
+                  .append("        auto res = sol.merge(intervals);\n")
+                  .append("        cout << \"[\";\n")
+                  .append("        for (size_t i = 0; i < res.size(); i++) {\n")
+                  .append("            cout << \"[\" << res[i][0] << \",\" << res[i][1] << \"]\" << (i + 1 < res.size() ? \",\" : \"\");\n")
+                  .append("        }\n")
+                  .append("        cout << \"]\" << endl;\n")
+                  .append("    }\n");
+                break;
+            case "trap":
+                sb.append("    if (!lines.empty()) cout << sol.trap(_parseVec(lines[0])) << endl;\n");
+                break;
+            case "maxProfit":
+                sb.append("    if (!lines.empty()) cout << sol.maxProfit(_parseVec(lines[0])) << endl;\n");
+                break;
+            case "maxSubArray":
+                sb.append("    if (!lines.empty()) cout << sol.maxSubArray(_parseVec(lines[0])) << endl;\n");
+                break;
+            case "climbStairs":
+                sb.append("    if (!lines.empty()) cout << sol.climbStairs(stoi(lines[0])) << endl;\n");
+                break;
+            case "coinChange":
+                sb.append("    if (lines.size() >= 2) cout << sol.coinChange(_parseVec(lines[0]), stoi(lines[1])) << endl;\n");
+                break;
+            case "maxArea":
+                sb.append("    if (!lines.empty()) cout << sol.maxArea(_parseVec(lines[0])) << endl;\n");
+                break;
+            default:
+                sb.append("    cout << 0 << endl;\n");
+                break;
+        }
+        sb.append("    return 0;\n}\n");
+        return sb.toString();
     }
 
     private List<TestCaseResult> executeWithJudge0(String language, String code, List<TestCase> tests, String starterCode) {
         List<TestCaseResult> results = new ArrayList<>();
         int languageId = getLanguageId(language);
         List<String> candidateUrls = getCandidateBaseUrls();
-        String executableCode = wrapCodeForExecution(language, code);
+        String executableCode = wrapCodeForExecution(language, code, starterCode);
 
         for (TestCase tc : tests) {
             try {
