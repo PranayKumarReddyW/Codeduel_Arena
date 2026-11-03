@@ -7,6 +7,8 @@ services:
     restart: unless-stopped
     ports:
       - "${PORT:-80}:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       # Optional remote database configuration (AWS RDS PostgreSQL / MySQL)
       # Defaults to local persistent H2 database when omitted
@@ -16,7 +18,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD:-}
       # Judge0 remote compilation API (Configured for instance on 54.196.209.169)
       - JUDGE0_API_KEY=${JUDGE0_API_KEY:-}
-      - JUDGE0_API_URL=${JUDGE0_API_URL:-http://54.196.209.169:2358}
+      - JUDGE0_API_URL=${JUDGE0_API_URL:-http://host.docker.internal:2358}
       - JUDGE0_API_HOST=${JUDGE0_API_HOST:-}
       - JUDGE0_API_WAIT=${JUDGE0_API_WAIT:-true}
     volumes:

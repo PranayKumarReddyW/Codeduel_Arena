@@ -47,7 +47,7 @@ public class Judge0Service {
 
     public String getFormattedApiUrl() {
         if (apiUrl == null || apiUrl.trim().isEmpty()) {
-            return "http://54.196.209.169:2358";
+            return "http://host.docker.internal:2358";
         }
         String trimmed = apiUrl.trim();
         if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
@@ -58,6 +58,18 @@ public class Judge0Service {
             trimmed = trimmed + ":2358";
         }
         return trimmed.replaceAll("/+$", "");
+    }
+
+    private List<String> getCandidateBaseUrls() {
+        List<String> list = new ArrayList<>();
+        String primary = getFormattedApiUrl();
+        list.add(primary);
+        if (primary.contains("54.196.209.169") || primary.contains("host.docker.internal")) {
+            if (!primary.contains("172.17.0.1")) list.add("http://172.17.0.1:2358");
+            if (!primary.contains("127.0.0.1")) list.add("http://127.0.0.1:2358");
+            if (!primary.contains("localhost")) list.add("http://localhost:2358");
+        }
+        return list;
     }
 
     public boolean isLiveJudge0Configured() {
@@ -91,7 +103,7 @@ public class Judge0Service {
     private List<TestCaseResult> executeWithJudge0(String language, String code, List<TestCase> tests, String starterCode) {
         List<TestCaseResult> results = new ArrayList<>();
         int languageId = getLanguageId(language);
-        String baseUrl = getFormattedApiUrl();
+        List<String> candidateUrls = getCandidateBaseUrls();
 
         for (TestCase tc : tests) {
             try {
@@ -102,52 +114,65 @@ public class Judge0Service {
                 payload.put("expected_output", tc.getExpected() != null ? tc.getExpected() : "");
 
                 String requestBody = objectMapper.writeValueAsString(payload);
-                String url = baseUrl + "/submissions?base64_encoded=false&wait=" + waitMode;
 
-                HttpRequest.Builder reqBuilder = HttpRequest.newBuilder()
-                        .uri(URI.create(url))
-                        .header("Content-Type", "application/json")
-                        .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                        .timeout(Duration.ofSeconds(10));
+                HttpResponse<String> response = null;
+                Exception lastErr = null;
 
-                if (apiHost != null && !apiHost.trim().isEmpty() && !apiHost.equalsIgnoreCase("none")) {
-                    reqBuilder.header("X-RapidAPI-Host", apiHost.trim());
-                }
-                if (apiKey != null && !apiKey.trim().isEmpty() && !apiKey.equalsIgnoreCase("none")) {
-                    reqBuilder.header("X-RapidAPI-Key", apiKey.trim());
-                    reqBuilder.header("X-Auth-Token", apiKey.trim());
-                }
+                for (String baseUrl : candidateUrls) {
+                    try {
+                        String url = baseUrl + "/submissions?base64_encoded=false&wait=" + waitMode;
+                        HttpRequest.Builder reqBuilder = HttpRequest.newBuilder()
+                                .uri(URI.create(url))
+                                .header("Content-Type", "application/json")
+                                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                                .timeout(Duration.ofSeconds(6));
 
-                HttpResponse<String> response = httpClient.send(reqBuilder.build(), HttpResponse.BodyHandlers.ofString());
+                        if (apiHost != null && !apiHost.trim().isEmpty() && !apiHost.equalsIgnoreCase("none")) {
+                            reqBuilder.header("X-RapidAPI-Host", apiHost.trim());
+                        }
+                        if (apiKey != null && !apiKey.trim().isEmpty() && !apiKey.equalsIgnoreCase("none")) {
+                            reqBuilder.header("X-RapidAPI-Key", apiKey.trim());
+                            reqBuilder.header("X-Auth-Token", apiKey.trim());
+                        }
 
-                if (response.statusCode() == 200 || response.statusCode() == 201) {
-                    JsonNode node = objectMapper.readTree(response.body());
-                    int statusId = node.path("status").path("id").asInt(0);
-                    String stdout = node.path("stdout").asText("").trim();
-                    String stderr = node.path("stderr").asText("").trim();
-                    String compileOutput = node.path("compile_output").asText("").trim();
-                    double time = node.path("time").asDouble(0.0) * 1000.0; // convert to ms
-                    double memory = node.path("memory").asDouble(0.0) / 1024.0; // convert KB to MB
-
-                    boolean passed = (statusId == 3); // 3 = Accepted
-                    String output = !stdout.isEmpty() ? stdout : (!stderr.isEmpty() ? stderr : compileOutput);
-                    if (output.isEmpty()) {
-                        output = passed ? tc.getExpected() : "(empty output)";
+                        HttpResponse<String> resp = httpClient.send(reqBuilder.build(), HttpResponse.BodyHandlers.ofString());
+                        if (resp.statusCode() == 200 || resp.statusCode() == 201) {
+                            response = resp;
+                            break;
+                        }
+                    } catch (Exception ex) {
+                        lastErr = ex;
                     }
+                }
 
-                    results.add(new TestCaseResult(
-                            passed ? "pass" : "fail",
-                            output,
-                            tc.getExpected(),
-                            time > 0 ? Math.round(time) : 15,
-                            memory > 0 ? Math.round(memory * 10.0) / 10.0 : 14.2
-                    ));
-                } else {
-                    log.warn("Judge0 submission returned status {}: {}. Falling back to internal evaluator.", response.statusCode(), response.body());
+                if (response == null) {
+                    if (lastErr != null) throw lastErr;
                     return executeWithFallback(language, code, tests, starterCode);
                 }
+
+                JsonNode node = objectMapper.readTree(response.body());
+                int statusId = node.path("status").path("id").asInt(0);
+                String stdout = node.path("stdout").asText("").trim();
+                String stderr = node.path("stderr").asText("").trim();
+                String compileOutput = node.path("compile_output").asText("").trim();
+                double time = node.path("time").asDouble(0.0) * 1000.0; // convert to ms
+                double memory = node.path("memory").asDouble(0.0) / 1024.0; // convert KB to MB
+
+                boolean passed = (statusId == 3); // 3 = Accepted
+                String output = !stdout.isEmpty() ? stdout : (!stderr.isEmpty() ? stderr : compileOutput);
+                if (output.isEmpty()) {
+                    output = passed ? tc.getExpected() : "(empty output)";
+                }
+
+                results.add(new TestCaseResult(
+                        passed ? "pass" : "fail",
+                        output,
+                        tc.getExpected(),
+                        time > 0 ? Math.round(time) : 15,
+                        memory > 0 ? Math.round(memory * 10.0) / 10.0 : 14.2
+                ));
             } catch (Exception e) {
-                log.warn("Error reaching Judge0 instance at {}: {}. Falling back to internal evaluator.", baseUrl, e.getMessage());
+                log.warn("Judge0 submission attempt failed: {}. Falling back to internal evaluator.", e.getMessage());
                 return executeWithFallback(language, code, tests, starterCode);
             }
         }
