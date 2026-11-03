@@ -12,9 +12,32 @@ dist
 dist-ssr
 .output
 .vinxi
-.tanstack/**
+.tanstack
+.tanstack/
 .nitro
 *.local
+
+# Environment variables & local secrets
+.env
+.env.*
+!.env.example
+*.env
+docker-compose.override.yml
+*.override.yml
+
+# Keys, certificates, and credentials (AWS EC2, SSH, SSL)
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+*.credentials
+credentials.json
+secrets.json
+aws-credentials*
 
 # Wrangler / Cloudflare
 .wrangler/
@@ -30,3 +53,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Database and Backend build artifacts
+*.mv.db
+*.trace.db
+*.db
+*.sqlite
+*.sqlite3
+backend/data/
+backend/target/
+data/
+codeduel_data/

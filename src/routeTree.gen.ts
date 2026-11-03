@@ -13,9 +13,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as MatchmakingRouteImport } from './routes/matchmaking'
+import { Route as ProblemsRouteImport } from './routes/problems'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ArenaMatchIdRouteImport } from './routes/arena.$matchId'
+import { Route as PracticeProblemIdRouteImport } from './routes/practice.$problemId'
 import { Route as ResultMatchIdRouteImport } from './routes/result.$matchId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -38,9 +41,19 @@ const LeaderboardRoute = LeaderboardRouteImport.update({
   path: '/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MatchmakingRoute = MatchmakingRouteImport.update({
   id: '/matchmaking',
   path: '/matchmaking',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProblemsRoute = ProblemsRouteImport.update({
+  id: '/problems',
+  path: '/problems',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -51,6 +64,11 @@ const ProfileRoute = ProfileRouteImport.update({
 const ArenaMatchIdRoute = ArenaMatchIdRouteImport.update({
   id: '/arena/$matchId',
   path: '/arena/$matchId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PracticeProblemIdRoute = PracticeProblemIdRouteImport.update({
+  id: '/practice/$problemId',
+  path: '/practice/$problemId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResultMatchIdRoute = ResultMatchIdRouteImport.update({
@@ -64,9 +82,12 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/history': typeof HistoryRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/login': typeof LoginRoute
   '/matchmaking': typeof MatchmakingRoute
+  '/problems': typeof ProblemsRoute
   '/profile': typeof ProfileRoute
   '/arena/$matchId': typeof ArenaMatchIdRoute
+  '/practice/$problemId': typeof PracticeProblemIdRoute
   '/result/$matchId': typeof ResultMatchIdRoute
 }
 export interface FileRoutesByTo {
@@ -74,9 +95,12 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/history': typeof HistoryRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/login': typeof LoginRoute
   '/matchmaking': typeof MatchmakingRoute
+  '/problems': typeof ProblemsRoute
   '/profile': typeof ProfileRoute
   '/arena/$matchId': typeof ArenaMatchIdRoute
+  '/practice/$problemId': typeof PracticeProblemIdRoute
   '/result/$matchId': typeof ResultMatchIdRoute
 }
 export interface FileRoutesById {
@@ -85,9 +109,12 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/history': typeof HistoryRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/login': typeof LoginRoute
   '/matchmaking': typeof MatchmakingRoute
+  '/problems': typeof ProblemsRoute
   '/profile': typeof ProfileRoute
   '/arena/$matchId': typeof ArenaMatchIdRoute
+  '/practice/$problemId': typeof PracticeProblemIdRoute
   '/result/$matchId': typeof ResultMatchIdRoute
 }
 export interface FileRouteTypes {
@@ -97,9 +124,12 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/history'
     | '/leaderboard'
+    | '/login'
     | '/matchmaking'
+    | '/problems'
     | '/profile'
     | '/arena/$matchId'
+    | '/practice/$problemId'
     | '/result/$matchId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -107,9 +137,12 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/history'
     | '/leaderboard'
+    | '/login'
     | '/matchmaking'
+    | '/problems'
     | '/profile'
     | '/arena/$matchId'
+    | '/practice/$problemId'
     | '/result/$matchId'
   id:
     | '__root__'
@@ -117,9 +150,12 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/history'
     | '/leaderboard'
+    | '/login'
     | '/matchmaking'
+    | '/problems'
     | '/profile'
     | '/arena/$matchId'
+    | '/practice/$problemId'
     | '/result/$matchId'
   fileRoutesById: FileRoutesById
 }
@@ -128,9 +164,12 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   HistoryRoute: typeof HistoryRoute
   LeaderboardRoute: typeof LeaderboardRoute
+  LoginRoute: typeof LoginRoute
   MatchmakingRoute: typeof MatchmakingRoute
+  ProblemsRoute: typeof ProblemsRoute
   ProfileRoute: typeof ProfileRoute
   ArenaMatchIdRoute: typeof ArenaMatchIdRoute
+  PracticeProblemIdRoute: typeof PracticeProblemIdRoute
   ResultMatchIdRoute: typeof ResultMatchIdRoute
 }
 
@@ -164,11 +203,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/matchmaking': {
       id: '/matchmaking'
       path: '/matchmaking'
       fullPath: '/matchmaking'
       preLoaderRoute: typeof MatchmakingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/problems': {
+      id: '/problems'
+      path: '/problems'
+      fullPath: '/problems'
+      preLoaderRoute: typeof ProblemsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -183,6 +236,13 @@ declare module '@tanstack/react-router' {
       path: '/arena/$matchId'
       fullPath: '/arena/$matchId'
       preLoaderRoute: typeof ArenaMatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/practice/$problemId': {
+      id: '/practice/$problemId'
+      path: '/practice/$problemId'
+      fullPath: '/practice/$problemId'
+      preLoaderRoute: typeof PracticeProblemIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/result/$matchId': {
@@ -200,9 +260,12 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   HistoryRoute: HistoryRoute,
   LeaderboardRoute: LeaderboardRoute,
+  LoginRoute: LoginRoute,
   MatchmakingRoute: MatchmakingRoute,
+  ProblemsRoute: ProblemsRoute,
   ProfileRoute: ProfileRoute,
   ArenaMatchIdRoute: ArenaMatchIdRoute,
+  PracticeProblemIdRoute: PracticeProblemIdRoute,
   ResultMatchIdRoute: ResultMatchIdRoute,
 }
 export const routeTree = rootRouteImport

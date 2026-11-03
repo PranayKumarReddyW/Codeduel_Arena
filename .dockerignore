@@ -1,0 +1,35 @@
+# Version control
+.git
+.gitignore
+
+# Dependencies & build outputs
+node_modules
+dist
+dist-ssr
+.output
+.tanstack
+.wrangler
+.nitro
+.vinxi
+
+# Backend artifacts & persistent data
+backend/target/
+backend/data/
+data/
+*.mv.db
+*.trace.db
+
+# Logs and environment
+*.log
+logs/
+.env
+.env.local
+.env.*.local
+docker-compose.override.yml
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+

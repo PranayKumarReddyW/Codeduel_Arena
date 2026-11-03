@@ -11,7 +11,13 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "backend:run": "mvn -f backend/pom.xml spring-boot:run",
+    "backend:build": "mvn -f backend/pom.xml clean package -DskipTests",
+    "backend:test": "mvn -f backend/pom.xml test",
+    "docker:build": "docker build -t codeduel .",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down"
   },
   "overrides": {
     "rolldown": "1.2.1"

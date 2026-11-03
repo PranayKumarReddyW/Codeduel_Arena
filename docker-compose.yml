@@ -1,0 +1,29 @@
+services:
+  codeduel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: codeduel-arena
+    restart: unless-stopped
+    ports:
+      - "${PORT:-80}:80"
+    environment:
+      # Optional remote database configuration (AWS RDS PostgreSQL / MySQL)
+      # Defaults to local persistent H2 database when omitted
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL:-}
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=${SPRING_DATASOURCE_DRIVER_CLASS_NAME:-}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME:-}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD:-}
+      # Judge0 remote compilation API (Configured for instance on 54.196.209.169)
+      - JUDGE0_API_KEY=${JUDGE0_API_KEY:-}
+      - JUDGE0_API_URL=${JUDGE0_API_URL:-http://54.196.209.169:2358}
+      - JUDGE0_API_HOST=${JUDGE0_API_HOST:-}
+      - JUDGE0_API_WAIT=${JUDGE0_API_WAIT:-true}
+    volumes:
+      # Persists H2 database files on the EC2 host across container updates
+      - codeduel_data:/app/data
+
+volumes:
+  codeduel_data:
+    name: codeduel_data
+

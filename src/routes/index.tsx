@@ -1,8 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { Radar, Users, Code2, Trophy, Zap, Shield, LineChart, Globe, ArrowRight, Swords, CheckCircle2 } from "lucide-react";
 import { Logo, PlayerAvatar, TierBadge } from "@/components/duel";
 import { Button } from "@/components/ui/button";
+import { DashboardSkeleton } from "@/components/dashboard-skeleton";
+import { fetchPlatformStats, type PlatformStats } from "@/lib/api";
+import { useUser } from "@/lib/store";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -33,6 +37,28 @@ const FEATURES = [
 ];
 
 function Landing() {
+  const navigate = useNavigate();
+  const { isAuthenticated, isLoading } = useUser();
+  const [stats, setStats] = useState<PlatformStats | null>(null);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate({ to: "/dashboard" });
+    }
+  }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      fetchPlatformStats().then(setStats).catch(console.error);
+    }
+  }, [isAuthenticated]);
+
+  if (isAuthenticated || isLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  const battlersCount = stats?.activeBattlers ? stats.activeBattlers.toLocaleString() : "2,840+";
+
   return (
     <div className="min-h-screen overflow-hidden bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/70 backdrop-blur">
@@ -44,8 +70,8 @@ function Landing() {
             <Link to="/leaderboard" className="hover:text-foreground">Leaderboard</Link>
           </nav>
           <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex"><Link to="/dashboard">Sign in</Link></Button>
-            <Button asChild size="sm" className="shadow-glow"><Link to="/dashboard">Get started</Link></Button>
+            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex"><Link to="/login">Sign in</Link></Button>
+            <Button asChild size="sm" className="shadow-glow"><Link to="/login">Get started</Link></Button>
           </div>
         </div>
       </header>
@@ -56,7 +82,7 @@ function Landing() {
         <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:py-28">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" /> 2,847 developers battling now
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" /> {battlersCount} developers battling now
             </span>
             <h1 className="mt-6 text-5xl font-black leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
               Challenge Developers.<br /><span className="text-gradient-brand">Prove Your Skills.</span>

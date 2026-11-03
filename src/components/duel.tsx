@@ -1,9 +1,12 @@
-import { Link, useLocation } from "@tanstack/react-router";
-import { Swords, LayoutDashboard, Trophy, User, History, Radar, Menu, X } from "lucide-react";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { Swords, LayoutDashboard, Trophy, User, History, Radar, Menu, X, LogOut, LogIn, Code2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { getTier, TIER_CLASS, type Tier } from "@/lib/data";
 import { useUser } from "@/lib/store";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function Logo({ className }: { className?: string }) {
   return (
@@ -46,6 +49,7 @@ export function TierBadge({ rating, tier, className }: { rating?: number; tier?:
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/problems", label: "Problems", icon: Code2 },
   { to: "/matchmaking", label: "Find Match", icon: Radar },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { to: "/history", label: "Match History", icon: History },
@@ -54,8 +58,16 @@ const NAV = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const { user } = useUser();
+  const navigate = useNavigate();
+  const { user, logout, isAuthenticated, isLoading } = useUser();
   const [open, setOpen] = useState(false);
+
+  const handleLogout = () => {
+    setOpen(false);
+    logout();
+    toast.success("Signed out successfully");
+    navigate({ to: "/login" });
+  };
 
   const nav = (
     <nav className="flex flex-col gap-1">
@@ -79,14 +91,39 @@ export function AppShell({ children }: { children: ReactNode }) {
     </nav>
   );
 
-  const userCard = user && (
-    <Link to="/profile" className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:border-primary/40">
-      <PlayerAvatar name={user.name} hue={280} size={36} />
-      <div className="min-w-0">
-        <div className="truncate text-sm font-semibold">{user.name}</div>
-        <div className="text-xs text-muted-foreground">{user.rating} · {getTier(user.rating)}</div>
+  const userCard = (isLoading || (!user && isAuthenticated)) ? (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+        <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <Skeleton className="h-4 w-24 rounded" />
+          <Skeleton className="h-3 w-16 rounded" />
+        </div>
       </div>
-    </Link>
+      <Skeleton className="h-8 w-full rounded-md" />
+    </div>
+  ) : (user && isAuthenticated) ? (
+    <div className="flex flex-col gap-2">
+      <Link to="/profile" className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:border-primary/40 transition-colors">
+        <PlayerAvatar name={user.name} hue={280} size={36} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-semibold">{user.name}</div>
+          <div className="text-xs text-muted-foreground">{user.rating} · {getTier(user.rating)}</div>
+        </div>
+      </Link>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleLogout}
+        className="w-full text-xs h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 justify-center"
+      >
+        <LogOut className="mr-1.5 h-3.5 w-3.5" /> Sign Out
+      </Button>
+    </div>
+  ) : (
+    <Button asChild size="sm" className="w-full shadow-glow">
+      <Link to="/login"><LogIn className="mr-2 h-4 w-4" /> Sign In</Link>
+    </Button>
   );
 
   return (
@@ -101,9 +138,16 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/80 px-4 py-3 backdrop-blur lg:hidden">
         <Logo />
-        <button onClick={() => setOpen(!open)} className="rounded-md p-2 hover:bg-muted" aria-label="Toggle menu">
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-2">
+          {!isAuthenticated && (
+            <Button asChild size="sm" variant="ghost">
+              <Link to="/login">Sign In</Link>
+            </Button>
+          )}
+          <button onClick={() => setOpen(!open)} className="rounded-md p-2 hover:bg-muted" aria-label="Toggle menu">
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </header>
       {open && (
         <div className="fixed inset-x-0 top-[57px] z-20 space-y-4 border-b border-border bg-sidebar p-4 lg:hidden">
@@ -140,20 +184,25 @@ export function StatCard({ label, value, icon: Icon, tone = "primary", sub }: { 
   );
 }
 
-export function Panel({ title, action, children, className }: { title?: ReactNode; action?: ReactNode; children: ReactNode; className?: string }) {
+export function Panel({ title, action, children, className }: { title: string; action?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={cn("rounded-xl border border-border bg-card", className)}>
-      {title && (
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <h2 className="font-semibold">{title}</h2>
-          {action}
-        </div>
-      )}
-      <div className="p-5">{children}</div>
+    <section className={cn("rounded-xl border border-border bg-card p-6", className)}>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-base font-semibold">{title}</h2>
+        {action}
+      </div>
+      {children}
     </section>
   );
 }
 
 export function Loading() {
-  return <div className="grid min-h-[50vh] place-items-center text-muted-foreground">Loading…</div>;
+  return (
+    <div className="grid min-h-[400px] place-items-center">
+      <div className="flex flex-col items-center gap-3 text-muted-foreground">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <span className="text-sm">Loading arena…</span>
+      </div>
+    </div>
+  );
 }
