@@ -10,6 +10,11 @@ mkdir -p /app/data
 
 # Ensure DATA_DIR is passed to Spring Boot
 export DATA_DIR="${DATA_DIR:-/app/data}"
+if [ -z "$SPRING_DATASOURCE_URL" ]; then
+    export SPRING_DATASOURCE_URL="jdbc:h2:file:/app/data/codedueldb;DB_CLOSE_DELAY=-1"
+    export SPRING_DATASOURCE_DRIVER_CLASS_NAME="org.h2.Driver"
+    export SPRING_DATASOURCE_USERNAME="sa"
+fi
 
 # Launch Spring Boot backend in background
 echo "==> [1/3] Booting Spring Boot REST API & WebSocket on port 8088..."

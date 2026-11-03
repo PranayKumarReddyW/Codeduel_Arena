@@ -62,5 +62,5 @@ aws-credentials*
 *.sqlite3
 backend/data/
 backend/target/
-data/
+/data/
 codeduel_data/
