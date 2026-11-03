@@ -125,7 +125,8 @@ public class CodeExecutionService {
             }
         }
 
-        for (int i = 0; i < allResults.size(); i++) {
+        int sampleCount = problem.getSampleTests().size();
+        for (int i = 0; i < Math.min(sampleCount, allResults.size()); i++) {
             TestCaseResult r = allResults.get(i);
             if (r.getStdout() != null && !r.getStdout().trim().isEmpty()) {
                 logs.add("--- Case " + (i + 1) + " Console Output ---");

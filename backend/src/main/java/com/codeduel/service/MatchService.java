@@ -75,7 +75,13 @@ public class MatchService {
     }
 
     public Optional<MatchRecord> getMatchById(String id) {
-        return matchRecordRepository.findById(id);
+        if (id == null) return Optional.empty();
+        Optional<MatchRecord> rec = matchRecordRepository.findById(id);
+        if (rec.isPresent()) return rec;
+        List<MatchRecord> all = matchRecordRepository.findAll();
+        return all.stream()
+                .filter(m -> m.getId() != null && (m.getId().equals(id) || m.getId().startsWith(id + "_") || id.startsWith(m.getId() + "_")))
+                .findFirst();
     }
 
     @Transactional
@@ -140,8 +146,17 @@ public class MatchService {
             playerRepository.save(p);
         }
 
+        String recordId = req.getId();
+        if (recordId == null || recordId.trim().isEmpty()) {
+            recordId = "M-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        }
+        Optional<MatchRecord> existing = matchRecordRepository.findById(recordId);
+        if (existing.isPresent() && !userId.equals(existing.get().getUserId())) {
+            recordId = recordId + "_" + userId;
+        }
+
         MatchRecord record = new MatchRecord(
-                req.getId(),
+                recordId,
                 userId,
                 req.getOpponentId(),
                 req.getProblemId(),

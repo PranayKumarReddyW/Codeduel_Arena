@@ -1,0 +1,45 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST || '54.196.209.169' }}
+          username: ${{ secrets.EC2_USER || 'ubuntu' }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script_stop: true
+          command_timeout: 15m
+          script: |
+            echo "=========================================="
+            echo " Starting CodeDuel Auto-Deployment"
+            echo "=========================================="
+            cd /home/ubuntu/codeduel-arena
+            git fetch origin main
+            git reset --hard origin/main
+            echo "==> Rebuilding Docker container image..."
+            sudo docker build -t codeduel-arena:latest .
+            echo "==> Recreating production container..."
+            sudo docker stop codeduel-arena || true
+            sudo docker rm codeduel-arena || true
+            sudo docker run -d --name codeduel-arena --restart unless-stopped -p 80:80 --add-host=host.docker.internal:host-gateway codeduel-arena:latest
+            echo "==> Health check..."
+            sleep 5
+            sudo docker ps -f name=codeduel-arena
+            echo "=========================================="
+            echo " CodeDuel Arena Successfully Deployed!"
+            echo "=========================================="

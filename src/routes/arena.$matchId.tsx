@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { Play, Send, RotateCcw, Clock, CheckCircle2, XCircle, Loader2, Flag, Activity, Terminal, Bot, Zap, Wifi } from "lucide-react";
+import { Play, Send, RotateCcw, Clock, CheckCircle2, XCircle, Loader2, Flag, Activity, Terminal, Bot, Zap, Wifi, Trophy, Skull } from "lucide-react";
 import { toast } from "sonner";
 import { Logo, PlayerAvatar, TierBadge, Loading } from "@/components/duel";
 import { Button } from "@/components/ui/button";
@@ -92,6 +92,7 @@ function Arena() {
   const finished = useRef(false);
   const elapsedRef = useRef(0);
   const wsRef = useRef<WebSocket | null>(null);
+  const [conclusion, setConclusion] = useState<{ open: boolean; outcome: "win" | "loss"; title: string; subtitle: string; delta: number } | null>(null);
 
   const [isBotMatch, setIsBotMatch] = useState<boolean | null>(null);
   const isBot = isBotMatch ?? (user?.pending?.isBot ?? (opp ? opp.id.startsWith("p") : false));
@@ -219,15 +220,30 @@ function Arena() {
           setEvents((prev) => [{ t: elapsedRef.current, text, tone }, ...prev]);
         } else if (msg.type === "MATCH_FINISHED") {
           setOppProgress(100);
-          setEvents((prev) => [{ t: elapsedRef.current, text, tone: "bad" }, ...prev]);
+          setEvents((prev) => [{ t: elapsedRef.current, text: msg.text || "Opponent solved the problem!", tone: "bad" }, ...prev]);
+          setConclusion({
+            open: true,
+            outcome: "loss",
+            title: "DEFEAT",
+            subtitle: `@${msg.winnerHandle || opp?.handle || "Opponent"} solved all test cases first!`,
+            delta: -18,
+          });
+          toast.error("Defeat! Opponent submitted an Accepted solution.");
           if (!finished.current) {
-            finish("loss");
+            setTimeout(() => finish("loss"), 3000);
           }
         } else if (msg.type === "OPPONENT_FORFEITED") {
           setEvents((prev) => [{ t: elapsedRef.current, text, tone: "good" }, ...prev]);
+          setConclusion({
+            open: true,
+            outcome: "win",
+            title: "VICTORY!",
+            subtitle: `@${opp?.handle || "Opponent"} forfeited the match!`,
+            delta: 25,
+          });
           toast.success("Opponent forfeited! You win.");
           if (!finished.current) {
-            finish("win");
+            setTimeout(() => finish("win"), 2500);
           }
         }
       } catch (err) {
@@ -318,21 +334,29 @@ function Arena() {
     const delta = result === "win" ? 25 : -18;
     const ratingAfter = user.rating + delta;
 
+    const recordPayload = {
+      id: matchId,
+      opponentId: opp.id,
+      problemId: problem.id,
+      difficulty: problem.difficulty,
+      result,
+      delta,
+      duration: elapsedRef.current,
+      language: lang,
+      ratingAfter,
+    };
+
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem(`codeduel_match_${matchId}_started_at`);
+      sessionStorage.setItem(`codeduel_result_${matchId}`, JSON.stringify({
+        match: recordPayload,
+        opp,
+        problem,
+      }));
+    }
+
     try {
-      if (typeof window !== "undefined") {
-        sessionStorage.removeItem(`codeduel_match_${matchId}_started_at`);
-      }
-      await recordMatch({
-        id: matchId,
-        opponentId: opp.id,
-        problemId: problem.id,
-        difficulty: problem.difficulty,
-        result,
-        delta,
-        duration: elapsedRef.current,
-        language: lang,
-        ratingAfter,
-      });
+      await recordMatch(recordPayload);
       setPendingMatch(undefined);
       refresh();
     } catch (err) {
@@ -426,9 +450,17 @@ function Arena() {
           sendWs({
             type: "SOLUTION_SUBMITTED",
             accepted: true,
+            winnerHandle: user.handle,
+          });
+          setConclusion({
+            open: true,
+            outcome: "win",
+            title: "VICTORY!",
+            subtitle: "You solved all test cases first!",
+            delta: 25,
           });
           toast.success("Accepted! You solved it first.");
-          setTimeout(() => finish("win"), 900);
+          setTimeout(() => finish("win"), 2800);
         } else {
           const passed = response.passedTests;
           const total = Math.max(1, response.totalTests);
@@ -635,18 +667,14 @@ function Arena() {
                     {results && results[activeCase] && (
                       <IO
                         label={`Output · ${results[activeCase]!.time}ms`}
-                        value={results[activeCase]!.output || "(empty)"}
+                        value={
+                          results[activeCase]!.stdout
+                            ? `${results[activeCase]!.output || ""}\n\n[Console Output]:\n${results[activeCase]!.stdout}`
+                            : results[activeCase]!.output || "(empty)"
+                        }
                         tone={results[activeCase]!.status}
                       />
                     )}
-                    {results && results[activeCase] && results[activeCase]!.stdout ? (
-                      <div className="sm:col-span-2">
-                        <IO
-                          label="Stdout / Print Output"
-                          value={results[activeCase]!.stdout!}
-                        />
-                      </div>
-                    ) : null}
                   </div>
                 </>
               ) : (
@@ -741,6 +769,71 @@ function Arena() {
           </ul>
         </aside>
       </div>
+
+      {/* Real-time Match Conclusion Overlay */}
+      {conclusion?.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md p-4">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className={cn(
+              "relative max-w-md w-full rounded-2xl border p-8 text-center shadow-2xl",
+              conclusion.outcome === "win"
+                ? "border-success/50 bg-card shadow-success/20"
+                : "border-destructive/50 bg-card shadow-destructive/20",
+            )}
+          >
+            <div
+              className={cn(
+                "mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full border",
+                conclusion.outcome === "win"
+                  ? "border-success/40 bg-success/15 text-success"
+                  : "border-destructive/40 bg-destructive/15 text-destructive",
+              )}
+            >
+              {conclusion.outcome === "win" ? (
+                <Trophy className="h-10 w-10 animate-bounce" />
+              ) : (
+                <Skull className="h-10 w-10 animate-pulse" />
+              )}
+            </div>
+
+            <h2
+              className={cn(
+                "text-4xl font-black tracking-tight",
+                conclusion.outcome === "win" ? "text-success" : "text-destructive",
+              )}
+            >
+              {conclusion.title}
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">{conclusion.subtitle}</p>
+
+            <div className="my-6 inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-4 py-1.5 font-mono text-sm">
+              <span>Rating change:</span>
+              <strong
+                className={
+                  conclusion.outcome === "win" ? "text-success" : "text-destructive"
+                }
+              >
+                {conclusion.delta > 0 ? `+${conclusion.delta}` : conclusion.delta}
+              </strong>
+            </div>
+
+            <div>
+              <Button
+                size="lg"
+                onClick={() => finish(conclusion.outcome)}
+                className={cn(
+                  "w-full shadow-glow",
+                  conclusion.outcome === "win" ? "bg-success hover:bg-success/90" : "",
+                )}
+              >
+                View Match Summary
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

@@ -517,21 +517,26 @@ public class Judge0Service {
                 double time = node.path("time").asDouble(0.0) * 1000.0; // convert to ms
                 double memory = node.path("memory").asDouble(0.0) / 1024.0; // convert KB to MB
 
+                boolean isHidden = tc.isHidden();
                 String userStdout = "";
                 String returnVal = stdout;
                 int delimIdx = stdout.indexOf(DELIMITER);
                 if (delimIdx >= 0) {
-                    userStdout = stdout.substring(0, delimIdx).trim();
+                    if (!isHidden) {
+                        userStdout = stdout.substring(0, delimIdx).trim();
+                    }
                     returnVal = stdout.substring(delimIdx + DELIMITER.length()).trim();
                 }
 
-                if (!stderr.isEmpty()) {
-                    if (!userStdout.isEmpty()) userStdout += "\n";
-                    userStdout += stderr;
-                }
-                if (!compileOutput.isEmpty()) {
-                    if (!userStdout.isEmpty()) userStdout += "\n";
-                    userStdout += compileOutput;
+                if (!isHidden) {
+                    if (!stderr.isEmpty()) {
+                        if (!userStdout.isEmpty()) userStdout += "\n";
+                        userStdout += stderr;
+                    }
+                    if (!compileOutput.isEmpty()) {
+                        if (!userStdout.isEmpty()) userStdout += "\n";
+                        userStdout += compileOutput;
+                    }
                 }
 
                 String cleanReturn = returnVal.replaceAll("\\s+", "");

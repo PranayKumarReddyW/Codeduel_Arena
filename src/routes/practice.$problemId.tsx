@@ -299,18 +299,14 @@ function PracticePage() {
                     {results && results[activeCase] && (
                       <IO
                         label={`Output · ${results[activeCase]!.time}ms`}
-                        value={results[activeCase]!.output || "(empty)"}
+                        value={
+                          results[activeCase]!.stdout
+                            ? `${results[activeCase]!.output || ""}\n\n[Console Output]:\n${results[activeCase]!.stdout}`
+                            : results[activeCase]!.output || "(empty)"
+                        }
                         tone={results[activeCase]!.status}
                       />
                     )}
-                    {results && results[activeCase] && results[activeCase]!.stdout ? (
-                      <div className="sm:col-span-2">
-                        <IO
-                          label="Stdout / Print Output"
-                          value={results[activeCase]!.stdout!}
-                        />
-                      </div>
-                    ) : null}
                   </div>
                 </>
               ) : (
