@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
-import { X, Check, Clock, Zap, Bot } from "lucide-react";
+import { X, Check, Clock, Zap } from "lucide-react";
 import { Logo, PlayerAvatar, TierBadge, Loading, AppShell } from "@/components/duel";
 import { Button } from "@/components/ui/button";
 import { useUser, statsOf, setPendingMatch } from "@/lib/store";
@@ -94,7 +94,7 @@ function Matchmaking() {
         matchId: matchResult.matchId,
         opponentId: matchResult.opponent.id,
         problemId: matchResult.problem.id,
-        isBot: matchResult.isBot,
+        isBot: false,
         opponentName: matchResult.opponent.name,
         opponentHandle: matchResult.opponent.handle,
       });
@@ -108,19 +108,6 @@ function Matchmaking() {
   function handleCancel() {
     isCancelledRef.current = true;
     cancelMatchmakingQueue().catch(console.error);
-  }
-
-  function handleSwitchToBot() {
-    if (user) {
-      findMatch(user.rating, true)
-        .then((res) => {
-          if (res && res.matchId && res.opponent && res.problem) {
-            setMatchResult(res);
-            setPhase("found");
-          }
-        })
-        .catch(console.error);
-    }
   }
 
   if (!user) {
@@ -195,10 +182,7 @@ function Matchmaking() {
 
             {elapsed >= 10 && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6 flex flex-col items-center gap-2">
-                <span className="text-xs text-muted-foreground">Taking longer than usual?</span>
-                <Button variant="secondary" size="sm" onClick={handleSwitchToBot} className="text-xs">
-                  <Bot className="mr-1.5 h-3.5 w-3.5" /> Practice Against Arena Bot
-                </Button>
+                <span className="text-xs text-muted-foreground">Waiting for another challenger to join...</span>
               </motion.div>
             )}
 
@@ -219,16 +203,9 @@ function Matchmaking() {
         {phase !== "searching" && matchResult && matchResult.opponent && matchResult.problem && (
           <motion.div key="found" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative mx-auto flex max-w-5xl flex-col items-center px-4 pt-6 text-center">
             <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex flex-col items-center gap-2">
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider",
-                  matchResult.isBot
-                    ? "bg-accent/15 text-accent border border-accent/30"
-                    : "bg-success/15 text-success border border-success/30 shadow-glow",
-                )}
-              >
-                {matchResult.isBot ? <Bot className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5 animate-pulse" />}
-                {matchResult.isBot ? "Challenger Practice Match" : "Live 1v1 Duel"}
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-success/15 text-success border border-success/30 shadow-glow">
+                <Zap className="h-3.5 w-3.5 animate-pulse" />
+                Live 1v1 Duel
               </span>
             </motion.div>
 

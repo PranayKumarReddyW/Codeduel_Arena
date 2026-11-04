@@ -2,25 +2,26 @@ package com.codeduel.dto;
 
 public class MatchmakingRequest {
     private Integer userRating;
-    private Boolean allowBotFallback = true;
+    private Boolean allowBotFallback = false;
     private String clientSessionId;
 
     public MatchmakingRequest() {
+        this.allowBotFallback = false;
     }
 
     public MatchmakingRequest(Integer userRating) {
         this.userRating = userRating;
-        this.allowBotFallback = true;
+        this.allowBotFallback = false;
     }
 
     public MatchmakingRequest(Integer userRating, Boolean allowBotFallback) {
         this.userRating = userRating;
-        this.allowBotFallback = allowBotFallback;
+        this.allowBotFallback = allowBotFallback != null ? allowBotFallback : false;
     }
 
     public MatchmakingRequest(Integer userRating, Boolean allowBotFallback, String clientSessionId) {
         this.userRating = userRating;
-        this.allowBotFallback = allowBotFallback;
+        this.allowBotFallback = allowBotFallback != null ? allowBotFallback : false;
         this.clientSessionId = clientSessionId;
     }
 
@@ -41,7 +42,7 @@ public class MatchmakingRequest {
     }
 
     public Boolean getAllowBotFallback() {
-        return allowBotFallback != null ? allowBotFallback : true;
+        return allowBotFallback != null ? allowBotFallback : false;
     }
 
     public void setAllowBotFallback(Boolean allowBotFallback) {

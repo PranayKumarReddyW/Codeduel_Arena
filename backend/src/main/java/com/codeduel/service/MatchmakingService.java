@@ -181,85 +181,18 @@ public class MatchmakingService {
             );
         }
 
-        // If no live player is waiting yet:
-        boolean allowBot = request == null || request.getAllowBotFallback();
-
-        if (!allowBot) {
-            // Check if user is already in queue; if not, add them
-            boolean alreadyInQueue = queue.stream().anyMatch(t -> t.userId.equalsIgnoreCase(currentUserId));
-            if (!alreadyInQueue) {
-                queue.add(new QueueTicket(currentUserId, currentHandle, currentName, currentRating, currentCountry, currentHue));
-            }
-            return new MatchmakingResponse(
-                    null,
-                    null,
-                    null,
-                    false,
-                    "Waiting in queue for a real opponent…",
-                    true,
-                    queue.size()
-            );
+        // If no live player is waiting yet, wait in queue for a real opponent
+        boolean alreadyInQueue = queue.stream().anyMatch(t -> t.userId.equalsIgnoreCase(currentUserId));
+        if (!alreadyInQueue) {
+            queue.add(new QueueTicket(currentUserId, currentHandle, currentName, currentRating, currentCountry, currentHue));
         }
-
-        // Otherwise fallback to an AI challenger bot
-        // CRITICAL: Strictly filter out current user from allBots so the user NEVER matches against themselves!
-        List<Player> allBots = new ArrayList<>(playerRepository.findAll());
-        allBots.removeIf(p ->
-                p.getId().equalsIgnoreCase(currentUserId)
-                || p.getHandle().equalsIgnoreCase(currentHandle)
-                || (currentUser != null && (p.getId().equalsIgnoreCase(currentUser.getId()) || p.getHandle().equalsIgnoreCase(currentUser.getHandle())))
-        );
-
-        if (allBots.isEmpty()) {
-            allBots.add(new Player("p_fallback", "Aiko Tanaka", "aiko.exe", 1200, 20, 5, 3, "JP", 290));
-        }
-
-        allBots.sort(Comparator.comparingInt(p -> Math.abs(p.getRating() - currentRating)));
-
-        int candidates = Math.min(4, allBots.size());
-        Player base = allBots.get(random.nextInt(candidates));
-        int botRating = currentRating + (random.nextInt(121) - 60);
-
-        Player botOpponent = new Player(
-                base.getId(),
-                base.getName(),
-                base.getHandle(),
-                botRating,
-                base.getWins(),
-                base.getLosses(),
-                base.getStreak(),
-                base.getCountry(),
-                base.getHue()
-        );
-
-        Player currentPlayerAsPlayer1 = new Player(
-                currentUserId,
-                currentName,
-                currentHandle,
-                currentRating,
-                currentUser != null ? currentUser.getWins() : 10,
-                currentUser != null ? currentUser.getLosses() : 4,
-                currentUser != null ? currentUser.getStreak() : 2,
-                currentCountry,
-                currentHue
-        );
-
-        ProblemDto problemDto = ProblemDto.fromEntity(selectedProblem);
-        activeRooms.put(matchId, new ActiveMatchRoom(
-                matchId,
-                problemDto,
-                currentPlayerAsPlayer1,
-                botOpponent,
-                true
-        ));
-
         return new MatchmakingResponse(
-                matchId,
-                botOpponent,
-                problemDto,
-                true,
-                "Matched with arena challenger @" + base.getHandle(),
+                null,
+                null,
+                null,
                 false,
+                "Waiting in queue for a real opponent…",
+                true,
                 queue.size()
         );
     }
@@ -281,7 +214,7 @@ public class MatchmakingService {
                     room.matchId,
                     room.problem,
                     opponent,
-                    room.isBot,
+                    false,
                     room.startedAt
             );
         }
@@ -296,7 +229,7 @@ public class MatchmakingService {
                 matchId,
                 fallbackProblem != null ? ProblemDto.fromEntity(fallbackProblem) : null,
                 fallbackPlayer,
-                true,
+                false,
                 System.currentTimeMillis()
         );
     }

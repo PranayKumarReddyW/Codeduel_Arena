@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { Play, Send, RotateCcw, Clock, CheckCircle2, XCircle, Loader2, Flag, Activity, Terminal, Bot, Zap, Wifi, Trophy, Skull } from "lucide-react";
+import { Play, Send, RotateCcw, Clock, CheckCircle2, XCircle, Loader2, Flag, Activity, Terminal, Zap, Wifi, Trophy, Skull } from "lucide-react";
 import { toast } from "sonner";
 import { Logo, PlayerAvatar, TierBadge, Loading } from "@/components/duel";
 import { Button } from "@/components/ui/button";
@@ -94,9 +94,6 @@ function Arena() {
   const wsRef = useRef<WebSocket | null>(null);
   const [conclusion, setConclusion] = useState<{ open: boolean; outcome: "win" | "loss"; title: string; subtitle: string; delta: number } | null>(null);
 
-  const [isBotMatch, setIsBotMatch] = useState<boolean | null>(null);
-  const isBot = isBotMatch ?? (user?.pending?.isBot ?? (opp ? opp.id.startsWith("p") : false));
-
   // Authoritatively load problem and opponent data from backend match room
   useEffect(() => {
     let active = true;
@@ -111,7 +108,6 @@ function Arena() {
           if (room.opponent) {
             setOpp(room.opponent);
           }
-          setIsBotMatch(room.isBot);
 
           if (room.startedAt) {
             startedAtRef.current = room.startedAt;
@@ -299,30 +295,6 @@ function Arena() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // simulated opponent pacing (only active if playing against bot challenger)
-  useEffect(() => {
-    if (!opp || !isBot) return;
-    const script: [number, OppEvent["text"], OppEvent["tone"], number][] = [
-      [4, "Opened the problem", "info", 5],
-      [12, "Started coding in C++", "info", 15],
-      [28, "Ran sample tests — 1/3 passed", "warn", 33],
-      [45, "Ran sample tests — 2/3 passed", "warn", 55],
-      [70, "Submitted — Wrong Answer on test 7", "bad", 62],
-      [100, "Ran sample tests — 3/3 passed", "good", 80],
-      [140, "Submitted — Accepted", "good", 100],
-    ];
-    const timers = script.map(([sec, text, tone, prog]) =>
-      setTimeout(() => {
-        if (finished.current) return;
-        setEvents((e) => [{ t: sec, text, tone }, ...e]);
-        setOppProgress(prog);
-        if (prog === 100) finish("loss");
-      }, sec * 1000),
-    );
-    return () => timers.forEach(clearTimeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [opp?.id, isBot]);
-
   useEffect(() => {
     if (remaining === 0) finish("loss");
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -503,16 +475,10 @@ function Arena() {
           <Clock className="h-4 w-4" /> {formatDuration(remaining)}
         </div>
         <div className="flex items-center gap-3 text-sm">
-          {isBot ? (
-            <span className="flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 text-xs font-semibold text-accent border border-accent/30">
-              <Bot className="h-3.5 w-3.5" /> Practice Challenger
-            </span>
-          ) : (
-            <span className="flex items-center gap-1.5 rounded-full bg-success/15 px-3 py-1 text-xs font-semibold text-success border border-success/30">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
-              <Zap className="h-3 w-3" /> Live Duel
-            </span>
-          )}
+          <span className="flex items-center gap-1.5 rounded-full bg-success/15 px-3 py-1 text-xs font-semibold text-success border border-success/30">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
+            <Zap className="h-3 w-3" /> Live Duel
+          </span>
           <Button
             size="sm"
             variant="ghost"
@@ -712,11 +678,7 @@ function Arena() {
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="truncate font-semibold">{opp.handle}</span>
-                  {isBot ? (
-                    <span className="rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-bold text-accent">BOT</span>
-                  ) : (
-                    <span className="rounded bg-success/20 px-1.5 py-0.5 text-[10px] font-bold text-success animate-pulse">PVP</span>
-                  )}
+                  <span className="rounded bg-success/20 px-1.5 py-0.5 text-[10px] font-bold text-success animate-pulse">PVP</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   {opp.rating} <TierBadge rating={opp.rating} />

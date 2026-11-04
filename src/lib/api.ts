@@ -271,7 +271,7 @@ export async function recordMatch(record: {
 }
 
 // Matchmaking API
-export async function findMatch(userRating?: number, allowBotFallback: boolean = true): Promise<MatchmakingResult> {
+export async function findMatch(userRating?: number, allowBotFallback: boolean = false): Promise<MatchmakingResult> {
   return request<MatchmakingResult>("/matchmaking/find", {
     method: "POST",
     body: JSON.stringify({ userRating, allowBotFallback, clientSessionId: getClientSessionId() }),
